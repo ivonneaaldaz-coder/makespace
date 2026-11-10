@@ -29,4 +29,4 @@ jobs:
             echo "::error::Missing GitHub repository secret CONVEX_DEV_DEPLOY_KEY"
             exit 1
           fi
-          npx convex deploy --yes
+          npx convex deploy
