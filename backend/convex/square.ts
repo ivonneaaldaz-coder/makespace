@@ -28,6 +28,34 @@ function safeSquareUrl(value:string){
 
 // Verify the admin's configured Square link maps to exactly one catalog variation.
 // This prevents attributing unrelated Square payments to MAKE SPACE events.
+
+// Dashboard-created Square links aren't exposed by the Checkout API list endpoint.
+// Read the merchant's catalog instead; the admin explicitly chooses the ticket variation.
+// Never infer or claim that a catalog selection proves ownership of a specific URL.
+async function catalogTickets(){
+  let cursor:string|undefined;
+  const options:Array<{variationId:string;name:string;priceCents:number|null;currency:string}>=[];
+  for(let page=0;page<25;page++){
+    const qs=new URLSearchParams({types:"ITEM",limit:"100"});
+    if(cursor)qs.set("cursor",cursor);
+    const result=await squareGet("/v2/catalog/list?"+qs.toString());
+    const objects=result.objects as Array<{id:string;item_data?:{name?:string;variations?:Array<{id:string;item_variation_data?:{name?:string;price_money?:{amount?:number;currency?:string}}}>}}>|undefined;
+    for(const item of objects||[]){
+      for(const variation of item.item_data?.variations||[]){
+        if(!variation.id)continue;
+        const money=variation.item_variation_data?.price_money;
+        options.push({variationId:variation.id,
+          name:(item.item_data?.name||"Untitled item")+(variation.item_variation_data?.name&&variation.item_variation_data.name!=="Regular"?" — "+variation.item_variation_data.name:""),
+          priceCents:typeof money?.amount==="number"?money.amount:null,
+          currency:money?.currency||"USD"});
+      }
+    }
+    cursor=result.cursor;
+    if(!cursor)break;
+  }
+  return options.sort((a,b)=>a.name.localeCompare(b.name));
+}
+
 export const inspectLink=action({
   args:{url:v.string()},
   handler:async(ctx,{url})=>{
@@ -44,12 +72,12 @@ export const inspectLink=action({
       cursor=result.cursor;
       if(!cursor)break;
     }
-    if(!match?.order_id)throw Error("This link was not found in the connected Square account");
+    if(!match?.order_id)return {mode:"catalog" as const, tickets:await catalogTickets()};
     const template:SquareOrder=(await squareGet("/v2/orders/"+encodeURIComponent(match.order_id))).order;
     const lines=template?.line_items||[];
     if(lines.length!==1||!lines[0].catalog_object_id)
       throw Error("Square link must contain exactly one catalog item variation");
-    return {variationId:lines[0].catalog_object_id,itemName:lines[0].name||"Square ticket",linkId:match.id||""};
+    return {mode:"link" as const,variationId:lines[0].catalog_object_id,itemName:lines[0].name||"Square ticket",linkId:match.id||""};
   }
 });
 
