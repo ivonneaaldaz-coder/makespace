@@ -11,14 +11,17 @@ a.bigbrand img{display:block;width:245px;height:auto;max-width:100%}
 
 </style>
 <style id="makespace-soft-shapes">
-:root{--ms-pill:999px;--ms-image-radius:32px}
-button,.btn,.button,.cta,.calendar-pill,.textlink,.signup button,.control,.monthnav button,.event .arr,
-input[type="submit"],a[role="button"],a.square-checkout,.booking{border-radius:var(--ms-pill)}
-.hero .float,.hero .float img,.float.one,.float.two,.float.three,.floating-image,.floating-image img{border-radius:var(--ms-pill);overflow:hidden}
-.event img,.event .live-artwork,.about img,.private img,.photo,.experience-image,.previewphoto img,.gallery img,
-.hero img:not(.float),.card img{border-radius:var(--ms-image-radius);overflow:hidden}
-.event{border-radius:var(--ms-image-radius);overflow:hidden}
-@media(max-width:600px){:root{--ms-image-radius:26px}button,.btn,.calendar-pill,.booking{border-radius:999px}}
+/* KEEP CTA controls pill-shaped; restore straight-edged imagery everywhere. */
+button,.btn,.button,.cta,.calendar-pill,.signup button,.control,.monthnav button,
+input[type="submit"],a[role="button"],a.square-checkout,.booking,.submit,
+#clerk-sign-in button{border-radius:999px}
+.hero .float,.hero .float img,.float.one,.float.two,.float.three,.float.four,
+.floating-image,.floating-image img,.event,.event img,.event .live-artwork,
+.about img,.private img,.photo,.experience-image,.previewphoto,.previewphoto img,
+.gallery img,.hero img,.card img,.surface img,.event-image,.access-card{
+  border-radius:0;
+}
+/* Some components have previous per-section rounded styles. */
 </style><style id="unified-footer-v1">
 footer{display:block;background:var(--wine);color:var(--paper);padding:95px 0 30px}
 footer .wrap{display:block}
