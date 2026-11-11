@@ -65,6 +65,23 @@
       "Catalog ticket selected. Confirm this is the ticket and price on your Square Dashboard link, then Save to Cloud.":
       "Choose a catalog ticket to link attendance tracking.";
   });
+
+  function downloadGuestCsv(e,d){
+    const cell=value=>{
+      let t=String(value??"").replace(/\r|\n/g," ");
+      if(/^\s*[=+@-]/.test(t))t="'"+t;
+      return '"'+t.replace(/"/g,'""')+'"';
+    };
+    const lines=[["Buyer","Email","Seats","Payment status","Confirmation","Paid USD","Date","Square payment ID"].map(cell).join(",")];
+    for(const r of d.rows)lines.push([r.buyerName,r.buyerEmail,r.quantity,r.status,r.confirmationStatus,
+      (r.amountCents/100).toFixed(2),new Date(r.createdAt).toISOString(),r.squarePaymentId].map(cell).join(","));
+    const file=new Blob(["\uFEFF"+lines.join("\r\n")+"\r\n"],{type:"text/csv;charset=utf-8"});
+    const link=document.createElement("a"),url=URL.createObjectURL(file);
+    link.href=url;
+    link.download="make-space-"+String(e.slug||e.title||"event").replace(/[^a-z0-9-]/gi,"-").slice(0,50)+"-guest-list.csv";
+    document.body.appendChild(link);link.click();link.remove();
+    setTimeout(()=>URL.revokeObjectURL(url),1000);
+  }
   $("attendees-button").addEventListener("click",async()=>{
     const e=getEvent();if(!e||!window.makeSpaceCloud?.connected)return;
     const panel=$("attendees-panel");panel.hidden=false;
@@ -77,6 +94,10 @@
         d.rows.map(r=>'<tr><td>'+safe(r.buyerName||r.buyerEmail||"Buyer not supplied")+'</td><td>'+r.quantity+'</td><td>'+safe(r.status)+'</td><td>'+safe(r.confirmationStatus)+'</td></tr>').join("")+
         '</tbody></table></div>':'<p>No verified Square bookings have synced for this event yet.</p>')+
         '<p style="font-size:11px;color:#766065;margin-top:20px">Square remains the source of truth for ticket capacity and payment receipts. Counts update after webhook processing.</p>';
+      if(d.rows.length){
+        panel.insertAdjacentHTML("afterbegin",'<button type="button" class="btn secondary small" id="download-attendees" style="margin-bottom:18px">Export guest list CSV ↓</button>');
+        panel.querySelector("#download-attendees").addEventListener("click",()=>downloadGuestCsv(e,d));
+      }
     }catch(err){panel.textContent="Could not load attendees: "+String(err.message||err).slice(0,200);}
   });
   reset();
