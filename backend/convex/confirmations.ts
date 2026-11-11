@@ -33,7 +33,7 @@ export const send=internalAction({
       "MAKE SPACE"
     ].join("\n");
     const response=await fetch("https://api.resend.com/emails",{
-      method:"POST",headers:{Authorization:"Bearer "+key,"Content-Type":"application/json"},
+      method:"POST",headers:{Authorization:"Bearer "+key,"Content-Type":"application/json","Idempotency-Key":"make-space-"+r.squarePaymentId},
       body:JSON.stringify({
         from:sender,to:[r.buyerEmail],subject:"You're on the list — "+e.title,text:body,
         headers:{"Idempotency-Key":"make-space-"+r.squarePaymentId}
