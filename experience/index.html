@@ -10,14 +10,17 @@
 @media(max-width:700px){.wrap{width:calc(100% - 30px)}header .wrap{padding:20px 0}.logo img{width:96px}nav{gap:12px}nav a{font-size:9px}main{padding:40px 0 70px}.backlink{margin-bottom:40px}.detailgrid{grid-template-columns:1fr;gap:35px}.detailgrid h1{font-size:clamp(58px,14vw,88px);margin:15px 0 28px}.experience-image{aspect-ratio:1.1}.description{font-size:16px}footer .wrap{display:block}}
 </style>
 <style id="makespace-soft-shapes">
-:root{--ms-pill:999px;--ms-image-radius:32px}
-button,.btn,.button,.cta,.calendar-pill,.textlink,.signup button,.control,.monthnav button,.event .arr,
-input[type="submit"],a[role="button"],a.square-checkout,.booking{border-radius:var(--ms-pill)}
-.hero .float,.hero .float img,.float.one,.float.two,.float.three,.floating-image,.floating-image img{border-radius:var(--ms-pill);overflow:hidden}
-.event img,.event .live-artwork,.about img,.private img,.photo,.experience-image,.previewphoto img,.gallery img,
-.hero img:not(.float),.card img{border-radius:var(--ms-image-radius);overflow:hidden}
-.event{border-radius:var(--ms-image-radius);overflow:hidden}
-@media(max-width:600px){:root{--ms-image-radius:26px}button,.btn,.calendar-pill,.booking{border-radius:999px}}
+/* KEEP CTA controls pill-shaped; restore straight-edged imagery everywhere. */
+button,.btn,.button,.cta,.calendar-pill,.signup button,.control,.monthnav button,
+input[type="submit"],a[role="button"],a.square-checkout,.booking,.submit,
+#clerk-sign-in button{border-radius:999px}
+.hero .float,.hero .float img,.float.one,.float.two,.float.three,.float.four,
+.floating-image,.floating-image img,.event,.event img,.event .live-artwork,
+.about img,.private img,.photo,.experience-image,.previewphoto,.previewphoto img,
+.gallery img,.hero img,.card img,.surface img,.event-image,.access-card{
+  border-radius:0;
+}
+/* Some components have previous per-section rounded styles. */
 </style></head><body>
 <header><div class="wrap"><a href="/" class="logo" aria-label="MAKE SPACE home"><img src="/assets/makespace-logo.svg" width="112" height="53" alt="MAKE SPACE"></a><nav><a href="/calendar/">Calendar</a><a href="/#about">About</a><a href="/private-events/">Private Events</a></nav></div></header>
 <main class="wrap"><div id="experience-detail"><p role="status">Loading experience…</p></div></main>
