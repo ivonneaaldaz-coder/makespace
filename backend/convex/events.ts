@@ -129,13 +129,26 @@ export const upsert = mutation({
     if (event.checkoutUrl && !safeSquareCheckoutUrl(event.checkoutUrl)) {
       throw new ConvexError("Use a Square payment link from square.link or checkout.square.site");
     }
+    if (event.squareVariationId) {
+      if (!event.checkoutUrl) throw new ConvexError("A Square item mapping requires a checkout link");
+      const mapped = await ctx.db.query("events")
+        .withIndex("by_square_variation", q => q.eq("squareVariationId", event.squareVariationId!)).unique();
+      if (mapped && mapped._id !== id) throw new ConvexError("Square ticket already linked to another event");
+    }
     const existing = await ctx.db.query("events")
       .withIndex("by_slug", q => q.eq("slug", event.slug)).unique();
     if (existing && existing._id !== id) throw new ConvexError("Slug already used");
     if (id) {
       const old = await ctx.db.get(id);
       if (!old) throw new ConvexError("Event not found");
-      await ctx.db.patch(id, { ...event, updatedAt: Date.now() });
+      await ctx.db.patch(id, {
+        ...event,
+        // Deleting or changing the link invalidates the prior mapping.
+        squareVariationId: event.checkoutUrl === old.checkoutUrl
+          ? event.squareVariationId
+          : event.squareVariationId || undefined,
+        updatedAt: Date.now()
+      });
       return id;
     }
     return await ctx.db.insert("events", { ...event, updatedAt: Date.now() });
