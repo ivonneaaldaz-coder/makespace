@@ -70,7 +70,7 @@ function intoEditor(e) {
     status: e.status === "sold_out" ? "sold-out" : e.status,
     time: e.time, duration: e.duration, venue: e.venue, price: e.priceCents / 100,
     capacity: e.capacity, description: e.description, image: e.imageExternalUrl || "",
-    imageStorageId: e.imageStorageId || null, imageData: "",
+    imageStorageId: e.imageStorageId || null, squareVariationId: e.squareVariationId || "", imageData: "",
     checkout: e.checkoutUrl || "", notes: e.notes, featured: e.featured
   };
 }
@@ -123,7 +123,8 @@ async function saveEvent(e) {
       description: data.description, featured: data.featured, notes: data.notes,
       ...(imageStorageId ? { imageStorageId } : {}),
       ...(data.image ? { imageExternalUrl: data.image } : {}),
-      checkoutUrl: data.checkout || ""
+      checkoutUrl: data.checkout || "",
+      ...(data.checkout && $("square-variation-id")?.value ? {squareVariationId:$("square-variation-id").value}: {})
     };
     await call("mutation", "events:upsert", { ...(editing ? {id: editing} : {}), event: formEvent });
     imageData = "";
@@ -157,6 +158,128 @@ async function duplicateEvent() {
     }});
     await loadEvents(); toast("Draft duplicate saved");
   } catch(err) { toast(errorMessage(err)); }
+}
+
+async function verifySquare() {
+  if(!ready) return;
+  const url=$("checkout").value.trim();
+  if(!url) return toast("Paste a Square link first");
+  const button=$("verify-square");
+  button.disabled=true;button.textContent="Checking Square…";
+  try{
+    const result=await call("action","square:inspectLink",{url});
+    $("square-variation-id").value=result.variationId;
+    $("square-link-status").textContent="Linked to Square: "+result.itemName+". Save to Cloud to enable attendance tracking.";
+    toast("Square ticket matched successfully");
+  }catch(err){
+    $("square-variation-id").value="";
+    $("square-link-status").textContent="Not connected: "+errorMessage(err);
+  }finally{
+    button.disabled=false;button.textContent="Verify with Square ↗";
+  }
+}
+async function showAttendees(){
+  if(!ready||!editing)return;
+  const panel=$("attendees-panel");
+  panel.hidden=false;
+  panel.innerHTML='<p>Loading paid registrations…</p>';
+  try{
+    const data=await call("query","square:listAttendees",{eventId:editing});
+    panel.innerHTML='<h3 style="font:400 32px Italiana,serif;margin:5px 0 16px">Attendees</h3>'+
+      '<p><strong>'+data.seatsSold+'</strong> paid seats · <strong>'+data.seatsRemaining+
+      '</strong> remaining of '+data.capacity+' · <strong>
+  ready = false;
+  setGate("Sign in to manage MAKE SPACE events.");
+  accessRequest.hidden = true;
+  signin.replaceChildren();
+  clerk.mountSignIn(signin, { routing: "hash" });
+}
+async function updateAuth() {
+  if (!clerk.session || !clerk.user) return showSignedOut();
+  setGate("Checking your access…");
+  try {
+    const who = await call("query", "session:whoAmI");
+    if (!who) return showSignedOut();
+    if (!who.authorized) {
+      ready = false;
+      setGate("Your sign-in works. This account needs approval before it can manage events.");
+      setRequest(who.tokenIdentifier);
+      $("access-signout").hidden = false;
+      return;
+    }
+    ready = true;
+    currentUserToken = who.tokenIdentifier;
+    await loadEvents();
+    showStudio();
+    $("auth-chip").textContent = "Connected · " + (who.role || "admin");
+    $("studio-signout").hidden = false;
+  } catch (err) {
+    ready = false;
+    setGate("Unable to connect: " + errorMessage(err));
+  }
+}
+async function init() {
+  setGate("Connecting to Clerk…");
+  try {
+    clerk = await clerkReady();
+    await clerk.load({ ui: { ClerkUI: window.__internal_ClerkUICtor } });
+    await updateAuth();
+    clerk.addListener(({session, user}) => {
+      if (!session || !user) {
+        if (ready) location.reload();
+        else showSignedOut();
+      } else if (!ready) updateAuth();
+    });
+  } catch (err) {
+    setGate("Authentication unavailable: " + errorMessage(err));
+  }
+}
+$("access-signout").onclick = () => clerk?.signOut().then(() => location.reload());
+$("studio-signout").onclick = () => clerk?.signOut().then(() => location.reload());
+initAttendeesUI();
+window.makeSpaceCloud = { save: saveEvent, remove: removeEvent, duplicate: duplicateEvent,
+  get connected() {return ready;}, reload: loadEvents };
+init();
+})();
++(data.revenueCents/100).toFixed(2)+'</strong> recorded gross revenue</p>'+
+      (data.rows.length?'<div style="overflow-x:auto"><table style="width:100%;border-collapse:collapse;font-size:12px">'+
+      '<thead><tr><th>Buyer</th><th>Seats</th><th>Payment</th><th>Confirmation</th></tr></thead><tbody>'+
+      data.rows.map(r=>'<tr><td>'+escapeHTML(r.buyerName||r.buyerEmail||"Buyer not supplied")+
+      '</td><td>'+r.quantity+'</td><td>'+escapeHTML(r.status)+
+      '</td><td>'+escapeHTML(r.confirmationStatus)+'</td></tr>').join("")+
+      '</tbody></table></div>':'<p>No paid bookings have been synced for this event yet.</p>')+
+      '<p style="font-size:11px;margin-top:16px">These figures update after verified Square webhook delivery. Square remains the authoritative ticket inventory.</p>';
+  }catch(err){panel.textContent="Could not load attendees: "+errorMessage(err);}
+}
+function initAttendeesUI(){
+  const checkout=$("checkout");
+  const parent=checkout.closest(".group");
+  parent.insertAdjacentHTML("beforeend",'<div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-top:9px">'+
+    '<button class="btn secondary small" type="button" id="verify-square">Verify with Square ↗</button>'+
+    '<span id="square-link-status" style="font-size:11px;color:#795962">Square tracking not connected yet</span></div>'+
+    '<input type="hidden" id="square-variation-id">');
+  $("verify-square").addEventListener("click",verifySquare);
+  checkout.addEventListener("input",()=>{
+    $("square-variation-id").value="";
+    $("square-link-status").textContent="Link changed — verify again to connect tracking";
+  });
+  const duplicate=$("duplicate");
+  duplicate.insertAdjacentHTML("beforebegin",'<button type="button" class="btn secondary small" id="show-attendees">View attendees</button>');
+  $("show-attendees").addEventListener("click",showAttendees);
+  $("editor-view").insertAdjacentHTML("beforeend",'<section id="attendees-panel" class="surface" hidden style="padding:26px;margin:18px 0;min-width:0"></section>');
+  const oldOpen=window.openEditor;
+  // Existing editor function is declared in the same global script; its fields
+  // are populated synchronously before the click handler runs.
+  document.addEventListener("click",ev=>{
+    if(ev.target.closest("[data-edit]")||ev.target.closest("[data-caledit]")){
+      $("attendees-panel").hidden=true;
+      const id=ev.target.closest("[data-edit]")?.dataset.edit || ev.target.closest("[data-caledit]")?.dataset.caledit;
+      const event=events.find(e=>e.id===id);
+      $("square-variation-id").value=event?.squareVariationId||"";
+      $("square-link-status").textContent=event?.squareVariationId?"Square variation linked":"Not linked to Square tracking";
+    }
+  });
+  $("add").addEventListener("click",()=>{ $("square-variation-id").value=""; $("attendees-panel").hidden=true; });
 }
 function showSignedOut() {
   ready = false;
