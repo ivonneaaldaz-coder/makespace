@@ -53,6 +53,8 @@ export default defineSchema({
     status: v.union(v.literal("paid"), v.literal("refunded")),
     confirmationStatus: v.union(v.literal("pending"), v.literal("sent"), v.literal("no_email"), v.literal("failed")),
     confirmationSentAt: v.optional(v.number()),
+    ownerNotificationStatus: v.optional(v.union(v.literal("pending"),v.literal("sent"),v.literal("failed"))),
+    ownerNotificationSentAt: v.optional(v.number()),
     createdAt: v.number(),
   }).index("by_payment", ["squarePaymentId"]).index("by_event", ["eventId"]),
   squareWebhooks: defineTable({
