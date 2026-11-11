@@ -14,15 +14,14 @@ http.route({path:"/square/webhook",method:"POST",handler:httpAction(async(ctx,re
   const header=request.headers.get("x-square-hmacsha256-signature")||"";
   if(!header)return new Response("Missing signature",{status:403});
   const bytes=new TextEncoder();
-  const secret=await crypto.subtle.importKey("raw",bytes.encode(key),{name:"HMAC",hash:"SHA-256"},false,["sign"]);
-  const calculated=new Uint8Array(await crypto.subtle.sign("HMAC",secret,bytes.encode(url+raw)));
+  const secret=await crypto.subtle.importKey("raw",bytes.encode(key),{name:"HMAC",hash:"SHA-256"},false,["verify"]);
   // Timing-independent verification: cryptographic verify with the actual signature bytes.
   let supplied:Uint8Array;
   try{
     const binary=atob(header);
     supplied=Uint8Array.from(binary,c=>c.charCodeAt(0));
   }catch{return new Response("Invalid signature",{status:403});}
-  if(supplied.length!==calculated.length)return new Response("Invalid signature",{status:403});
+  if(supplied.length!==32)return new Response("Invalid signature",{status:403});
   const valid=await crypto.subtle.verify("HMAC",secret,supplied,bytes.encode(url+raw));
   if(!valid)return new Response("Invalid signature",{status:403});
   let payload:any;
