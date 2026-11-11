@@ -13,6 +13,13 @@
       return u.protocol === "https:" ? u.href : "";
     } catch { return ""; }
   };
+  const allowedCheckout = value => {
+    try {
+      const u = new URL(value);
+      if (u.protocol !== "https:" || u.username || u.password) return "";
+      return ["square.link","checkout.square.site"].includes(u.hostname.toLowerCase()) ? u.href : "";
+    } catch { return ""; }
+  };
   const urlFor = event => "/experience/?slug=" + encodeURIComponent(event.slug);
   const dateText = iso => {
     const d = new Date(iso + "T12:00:00Z");
@@ -134,8 +141,15 @@
         '<p><b>WHERE</b><br>'+escape(e.venue||"Venue to be announced")+'</p>'+
         '<p><b>DURATION</b><br>'+escape(e.duration)+' minutes</p>'+
         '<p><b>PRICE</b><br>'+ (e.priceCents===0?"Free":"$"+(e.priceCents/100).toFixed(2))+' per person</p>'+
-        '<p class="booking">'+(e.status==="sold_out"?"Sold out":"Registration details coming soon")+'</p>'+
-        '<small>Ticket checkout is not yet enabled.</small></aside></div>';
+        (e.status === "sold_out" ?
+          '<p class="booking">Sold out</p><small>This experience is currently full.</small>' :
+          allowedCheckout(e.checkoutUrl) ?
+          '<a class="booking square-checkout" href="'+escape(allowedCheckout(e.checkoutUrl))+
+            '" target="_blank" rel="noopener noreferrer">Reserve your spot ↗</a>'+
+          '<small>Secure checkout through Square. Your booking is confirmed by Square after payment.</small>' :
+          '<p class="booking">Registration opening soon</p>'+
+          '<small>Check back for the ticket link.</small>')+
+        '</aside></div>';
     } catch {
       $("experience-detail").innerHTML='<p role="alert">Could not load this event. Please try again.</p><a href="/calendar/">Back to calendar</a>';
     }
