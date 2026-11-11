@@ -36,12 +36,15 @@ The public checkout button already takes guests to Square. Square handles card i
 - The webhook's signature key and notification URL must match the configured Square subscription exactly; unsigned webhook calls are rejected.
 - If a Square API call fails during processing, the scheduled action fails and an admin needs to reconcile it; automatic job retry and Square missed-event replay are pending.
 
-## Custom confirmation emails (Resend)
-A MAKE SPACE confirmation email is sent after a verified COMPLETED payment **only if** you configure both:
+## Branded confirmations and MAKE SPACE booking alerts (Resend)
+Two separately tracked emails are queued after a verified COMPLETED payment: a branded guest confirmation (when Square supplies a buyer email) and an owner booking alert to `makespacesatx@gmail.com`. They are sent **only if** you configure both:
 - `RESEND_API_KEY`: from https://resend.com/api-keys
 - `MAKE_SPACE_FROM_EMAIL`: e.g. `MAKE SPACE <events@makespace.social>` **only after verifying ownership of makespace.social with Resend**.
+- Optional: `MAKE_SPACE_BOOKING_NOTIFY_EMAIL`: `makespacesatx@gmail.com` (defaults to that address when omitted). This is a recipient address, **not** the sender identity.
 
-When those variables are absent, the email action does not send anything. Registrations stay in `pending` confirmation state and must be followed up in Square. When the buyer's email isn't provided by Square, status is `no_email` and no message is sent. `sent` means the email provider accepted the request, not that it was delivered.
+When the sender or API key is absent, email actions send nothing. Registrations stay in `pending` confirmation state and must be followed up in Square. When the buyer's email isn't provided by Square, the guest confirmation status is `no_email`, while the owner notification can still send. `sent` means the email provider accepted the request, not that it was delivered. The owner notification has its own `ownerNotificationStatus` field. Both messages have distinct idempotency keys.
+
+**Before accepting live registrations:** Send test emails to your own inbox from the verified domain, verify deliverability, and confirm Square supplies the buyer email address. Do not rely on the Square 'Test webhook' simulation as a paid booking or email delivery test.
 
 Before enabling email, verify the actual purchased domain, DNS records, and sending address. Do not invent a sending email address.
 
