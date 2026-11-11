@@ -14,7 +14,7 @@ const accessRequest = $("access-request");
 
 function errorMessage(e) {
   const msg = String(e?.message || e || "Unknown error");
-  return msg.replace(/\s*\[Request ID:.*$/s, "").slice(0, 250);
+  return msg.replace(/\s*\[Request ID:.*$/s, "").slice(0, 340);
 }
 function setGate(message) { gate.hidden = false; $("studio-app").hidden = true; status.textContent = message; }
 function showStudio() { gate.hidden = true; $("studio-app").hidden = false; }
@@ -41,14 +41,27 @@ async function token() {
   return t;
 }
 async function call(kind, path, args = {}) {
-  const response = await fetch(CONVEX + "/api/" + kind, {
-    method: "POST",
-    headers: { "Content-Type": "application/json", Authorization: "Bearer " + await token() },
-    body: JSON.stringify({ path, args }),
-    cache: "no-store"
-  });
-  const json = await response.json();
-  if (!response.ok || json.status !== "success") throw Error(json.errorMessage || "Convex request failed");
+  let response;
+  try {
+    response = await fetch(CONVEX + "/api/" + kind, {
+      method: "POST",
+      mode: "cors",
+      headers: { "Content-Type": "application/json", Authorization: "Bearer " + await token() },
+      body: JSON.stringify({ path, args, format: "json" }),
+      cache: "no-store"
+    });
+  } catch (err) {
+    throw Error("Network/CORS error contacting Convex. Check your connection and try again.");
+  }
+  const body = await response.text();
+  let json;
+  try { json = JSON.parse(body); }
+  catch { throw Error("Convex HTTP " + response.status + " returned non-JSON response"); }
+  if (!response.ok || json.status !== "success") {
+    const message = json.errorMessage || json.message || json.error || json.code ||
+      ("Convex returned status " + String(json.status || "unknown"));
+    throw Error("Convex HTTP " + response.status + ": " + String(message).slice(0, 320));
+  }
   return json.value;
 }
 function intoEditor(e) {
@@ -143,7 +156,7 @@ function showSignedOut() {
   clerk.mountSignIn(signin, { routing: "hash" });
 }
 async function updateAuth() {
-  if (!clerk.isSignedIn || !clerk.session) return showSignedOut();
+  if (!clerk.session || !clerk.user) return showSignedOut();
   setGate("Checking your access…");
   try {
     const who = await call("query", "session:whoAmI");
