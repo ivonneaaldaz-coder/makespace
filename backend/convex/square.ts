@@ -127,6 +127,16 @@ export const setConfirmation=internalMutation({
   }
 });
 
+export const setOwnerNotification=internalMutation({
+  args:{id:v.id("registrations"),status:v.union(v.literal("pending"),v.literal("sent"),v.literal("failed"))},
+  handler:async(ctx,{id,status})=>{
+    const record=await ctx.db.get(id);
+    if(!record||record.ownerNotificationStatus==="sent")return;
+    await ctx.db.patch(id,{ownerNotificationStatus:status,
+      ...(status==="sent"?{ownerNotificationSentAt:Date.now()}: {})});
+  }
+});
+
 export const recordPayment=internalMutation({
   args:{
     squarePaymentId:v.string(),squareOrderId:v.string(),variationId:v.string(),
@@ -144,9 +154,10 @@ export const recordPayment=internalMutation({
       eventId:event._id,squarePaymentId:args.squarePaymentId,squareOrderId:args.squareOrderId,
       ...(args.email?{buyerEmail:args.email}:{}),...(args.name?{buyerName:args.name}:{}),
       quantity:args.quantity,amountCents:args.amountCents,currency:args.currency,
-      status:"paid",confirmationStatus:args.email?"pending":"no_email",createdAt:Date.now()
+      status:"paid",confirmationStatus:args.email?"pending":"no_email",ownerNotificationStatus:"pending",createdAt:Date.now()
     });
     if(args.email)await ctx.scheduler.runAfter(0,internal.confirmations.send,{registrationId:id});
+    await ctx.scheduler.runAfter(0,internal.confirmations.notifyOwner,{registrationId:id});
     return id;
   }
 });
