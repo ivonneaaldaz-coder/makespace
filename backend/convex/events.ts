@@ -23,6 +23,7 @@ const eventFields = {
   imageStorageId: v.optional(v.id("_storage")),
   imageExternalUrl: v.optional(v.string()),
   checkoutUrl: v.optional(v.string()),
+  squareVariationId: v.optional(v.string()),
   featured: v.boolean(),
   notes: v.string(),
 };
