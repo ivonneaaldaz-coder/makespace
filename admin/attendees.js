@@ -9,12 +9,14 @@
   $("duplicate").insertAdjacentHTML("beforebegin",'<button type="button" class="btn secondary small" id="attendees-button">Attendees</button>');
   $("editor-view").insertAdjacentHTML("beforeend",'<section id="attendees-panel" class="surface" hidden style="padding:24px;margin:20px 0;min-width:0"></section>');
   let trackingUrl="";
+  controls.insertAdjacentHTML("beforeend", '<div id="square-catalog-picker" hidden style="margin-top:12px"><label for="square-ticket" style="font-size:11px;font-weight:700;display:block;margin-bottom:6px">MATCH SQUARE CATALOG TICKET</label><select id="square-ticket" style="width:100%;padding:12px;background:#fff;border:1px solid #decfc8;border-radius:9px"><option value="">Choose the exact ticket used by this payment link</option></select><p style="font-size:11px;color:#806c71">Dashboard payment links cannot be inspected through Square’s API. Select the item used in that link and double-check its name and price.</p></div>');
   const getEvent=()=>typeof editing==="string"?events.find(e=>e.id===editing):null;
   const reset=()=>{
     const e=getEvent();
     trackingUrl=e?.checkout||"";
     window.makeSpaceSquareVariation=e?.squareVariationId||"";
     $("square-verify-status").textContent=window.makeSpaceSquareVariation?"Square ticket mapping saved":"Not verified for automatic attendee tracking";
+    $("square-catalog-picker").hidden=true;
     $("attendees-panel").hidden=true;
     $("attendees-button").hidden=!e;
   };
@@ -25,6 +27,7 @@
   document.querySelectorAll('.side-link').forEach(b=>b.addEventListener("click",()=>setTimeout(reset,0)));
   $("checkout").addEventListener("input",()=>{
     window.makeSpaceSquareVariation="";
+    $("square-catalog-picker").hidden=true;
     $("square-verify-status").textContent="Changed link: verify again before saving";
   });
   $("verify-square").addEventListener("click",async()=>{
@@ -35,12 +38,32 @@
     try{
       const match=await window.makeSpaceCloud.request("action","square:inspectLink",{url});
       trackingUrl=url;
-      window.makeSpaceSquareVariation=match.variationId;
-      $("square-verify-status").textContent="Matched: "+match.itemName+". Save to Cloud to finish.";
+      if(match.mode==="catalog"){
+        window.makeSpaceSquareVariation="";
+        const options=(match.tickets||[]).filter(t=>t.currency==="USD");
+        $("square-ticket").innerHTML='<option value="">Choose the exact ticket used by this payment link</option>'+
+          options.map(t=>'<option value="'+safe(t.variationId)+'">'+safe(t.name)+
+            (t.priceCents===null?"":" · $"+(t.priceCents/100).toFixed(2))+'</option>').join("");
+        $("square-catalog-picker").hidden=false;
+        $("square-verify-status").textContent=options.length?
+          "Dashboard link detected. Select its ticket from the catalog below.":
+          "No catalog tickets were found. Check the Square account and catalog permissions.";
+      }else{
+        $("square-catalog-picker").hidden=true;
+        window.makeSpaceSquareVariation=match.variationId;
+        $("square-verify-status").textContent="Square API link matched: "+match.itemName+". Save to Cloud.";
+      }
     }catch(err){
       window.makeSpaceSquareVariation="";
       $("square-verify-status").textContent=String(err.message||err).slice(0,150);
     }finally{btn.disabled=false;btn.textContent="Verify with Square ↗";}
+  });
+  $("square-ticket").addEventListener("change",()=>{
+    const variationId=$("square-ticket").value;
+    window.makeSpaceSquareVariation=variationId;
+    $("square-verify-status").textContent=variationId?
+      "Catalog ticket selected. Confirm this is the ticket and price on your Square Dashboard link, then Save to Cloud.":
+      "Choose a catalog ticket to link attendance tracking.";
   });
   $("attendees-button").addEventListener("click",async()=>{
     const e=getEvent();if(!e||!window.makeSpaceCloud?.connected)return;
