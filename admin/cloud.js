@@ -93,6 +93,16 @@ async function saveEvent(e) {
   if (!ready) return;
   if (!$("event-form").reportValidity()) return;
   const data = readForm();
+  if (data.checkout) {
+    try {
+      const payment = new URL(data.checkout);
+      if (payment.protocol !== "https:" ||
+          !["square.link", "checkout.square.site"].includes(payment.hostname.toLowerCase()) ||
+          payment.username || payment.password) {
+        return toast("Use a Square-hosted checkout link from square.link or checkout.square.site");
+      }
+    } catch { return toast("Enter a valid Square payment link"); }
+  }
   const prior = editing ? events.find(x => x.id === editing) : null;
   const slug = prior?.slug || data.title.toLowerCase().normalize("NFKD")
     .replace(/[\u0300-\u036f]/g, "").replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g,"");
@@ -113,7 +123,7 @@ async function saveEvent(e) {
       description: data.description, featured: data.featured, notes: data.notes,
       ...(imageStorageId ? { imageStorageId } : {}),
       ...(data.image ? { imageExternalUrl: data.image } : {}),
-      ...(data.checkout ? { checkoutUrl: data.checkout } : {})
+      checkoutUrl: data.checkout || ""
     };
     await call("mutation", "events:upsert", { ...(editing ? {id: editing} : {}), event: formEvent });
     imageData = "";
