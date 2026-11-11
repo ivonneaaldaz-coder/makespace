@@ -52,6 +52,20 @@ function validateEvent(e: {
   }
 }
 
+/** Only Square-hosted checkout URLs are allowed for public booking. */
+function safeSquareCheckoutUrl(value: string | undefined) {
+  if (!value) return null;
+  try {
+    const u = new URL(value);
+    const host = u.hostname.toLowerCase();
+    if (u.protocol !== "https:" || u.username || u.password) return null;
+    if (host === "square.link" || host === "checkout.square.site") return u.href;
+    return null;
+  } catch {
+    return null;
+  }
+}
+
 async function publicEvent(ctx: { storage: { getUrl: (id: any) => Promise<string | null> } }, event: any) {
   return {
     _id: event._id,
@@ -68,11 +82,12 @@ async function publicEvent(ctx: { storage: { getUrl: (id: any) => Promise<string
     capacity: event.capacity,
     description: event.description,
     featured: event.featured,
+    checkoutUrl: event.status === "published" ? safeSquareCheckoutUrl(event.checkoutUrl) : null,
     imageUrl: event.imageStorageId
       ? await ctx.storage.getUrl(event.imageStorageId)
       : event.imageExternalUrl ?? null,
-    // NEVER return checkout URL until verified against Square configuration.
-    // NEVER return internal notes or backend storage identifiers.
+    // Public checkout links are restricted to Square-hosted HTTPS domains.
+    // Never return internal notes or backend storage identifiers.
   };
 }
 
@@ -110,6 +125,9 @@ export const upsert = mutation({
   handler: async (ctx, { id, event }) => {
     await requireAdmin(ctx);
     validateEvent(event);
+    if (event.checkoutUrl && !safeSquareCheckoutUrl(event.checkoutUrl)) {
+      throw new ConvexError("Use a Square payment link from square.link or checkout.square.site");
+    }
     const existing = await ctx.db.query("events")
       .withIndex("by_slug", q => q.eq("slug", event.slug)).unique();
     if (existing && existing._id !== id) throw new ConvexError("Slug already used");
