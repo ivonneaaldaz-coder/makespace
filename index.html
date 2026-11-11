@@ -60,14 +60,17 @@ a.bigbrand img{display:block;width:245px;height:auto;max-width:100%}
 
 </style><style id="live-events-styles">.live-empty{grid-column:1/-1;padding:40px 12px 75px;font:400 clamp(28px,5vw,53px)/1.15 'Italiana',Georgia,serif;color:var(--b,#501923);max-width:700px}.live-empty p,.live-empty a{font:400 14px/1.7 'DM Sans',sans-serif;display:block;margin-top:12px}.live-artwork{height:320px;background:#7c5260;color:#f6f0e8;display:grid;place-items:center;font-size:18px;letter-spacing:.15em}</style>
 <style id="makespace-soft-shapes">
-:root{--ms-pill:999px;--ms-image-radius:32px}
-button,.btn,.button,.cta,.calendar-pill,.textlink,.signup button,.control,.monthnav button,.event .arr,
-input[type="submit"],a[role="button"],a.square-checkout,.booking{border-radius:var(--ms-pill)}
-.hero .float,.hero .float img,.float.one,.float.two,.float.three,.floating-image,.floating-image img{border-radius:var(--ms-pill);overflow:hidden}
-.event img,.event .live-artwork,.about img,.private img,.photo,.experience-image,.previewphoto img,.gallery img,
-.hero img:not(.float),.card img{border-radius:var(--ms-image-radius);overflow:hidden}
-.event{border-radius:var(--ms-image-radius);overflow:hidden}
-@media(max-width:600px){:root{--ms-image-radius:26px}button,.btn,.calendar-pill,.booking{border-radius:999px}}
+/* KEEP CTA controls pill-shaped; restore straight-edged imagery everywhere. */
+button,.btn,.button,.cta,.calendar-pill,.signup button,.control,.monthnav button,
+input[type="submit"],a[role="button"],a.square-checkout,.booking,.submit,
+#clerk-sign-in button{border-radius:999px}
+.hero .float,.hero .float img,.float.one,.float.two,.float.three,.float.four,
+.floating-image,.floating-image img,.event,.event img,.event .live-artwork,
+.about img,.private img,.photo,.experience-image,.previewphoto,.previewphoto img,
+.gallery img,.hero img,.card img,.surface img,.event-image,.access-card{
+  border-radius:0;
+}
+/* Some components have previous per-section rounded styles. */
 </style></head><body>
 <header><div class="wrap nav"><a href="/" aria-label="MAKE SPACE home" class="logo"><img src="/assets/makespace-logo.svg" width="116" height="55" alt="MAKE SPACE"></a><nav class="navlinks"><a href="/calendar/">Calendar</a><a href="#about">About</a><a href="/private-events/">Private events</a><a class="button" href="#experiences">See what's next <span class="arrow">↗</span></a></nav><button class="menu" type="button" aria-controls="mobile-nav" aria-expanded="false" onclick="const n=document.getElementById('mobile-nav');n.classList.toggle('open');this.setAttribute('aria-expanded',n.classList.contains('open'))">MENU ☰</button></div><nav id="mobile-nav" class="mobile-nav" aria-label="Mobile menu"><a href="/calendar/">Calendar</a><a href="#about">About</a><a href="/private-events/">Private events</a><a href="#community">Join the list</a></nav></header>
 <main>
