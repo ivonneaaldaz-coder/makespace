@@ -41,10 +41,17 @@ a.bigbrand img{display:block;width:245px;height:auto;max-width:100%}
 <script defer crossorigin="anonymous" data-clerk-publishable-key="pk_test_YWN0dWFsLXNuaXBlLTEzMzUuY2xlcmsuYWNjb3VudHMuZGV2JA" src="https://actual-snipe-1335.clerk.accounts.dev/npm/@clerk/clerk-js@6/dist/clerk.browser.js"></script>
 
 <style id="makespace-soft-shapes">
-:root{--ms-pill:999px;--ms-image-radius:32px}
-.btn,.control,.side-link,.editlink,button,.chip,.input[type="submit"],.access-control,
-#clerk-sign-in button{border-radius:var(--ms-pill)}
-.previewphoto,.previewphoto img,.surface img,.event-image,.access-card{border-radius:var(--ms-image-radius);overflow:hidden}
+/* KEEP CTA controls pill-shaped; restore straight-edged imagery everywhere. */
+button,.btn,.button,.cta,.calendar-pill,.signup button,.control,.monthnav button,
+input[type="submit"],a[role="button"],a.square-checkout,.booking,.submit,
+#clerk-sign-in button{border-radius:999px}
+.hero .float,.hero .float img,.float.one,.float.two,.float.three,.float.four,
+.floating-image,.floating-image img,.event,.event img,.event .live-artwork,
+.about img,.private img,.photo,.experience-image,.previewphoto,.previewphoto img,
+.gallery img,.hero img,.card img,.surface img,.event-image,.access-card{
+  border-radius:0;
+}
+/* Some components have previous per-section rounded styles. */
 </style></head><body>
 
 <section id="access-gate" aria-label="Sign in to MAKE SPACE Studio Manager"><div class="access-card">
