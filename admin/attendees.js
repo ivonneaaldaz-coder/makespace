@@ -101,7 +101,7 @@
       '<tr><th style="padding:10px">Purchaser</th><th style="padding:10px">Email</th><th style="padding:10px">Tickets</th><th style="padding:10px">Paid</th><th style="padding:10px">Payment</th></tr></thead><tbody>'+
       bookings.map(b=>'<tr><td style="padding:10px">'+safe(b.buyerName||"Name not provided")+'</td>'+
       '<td style="padding:10px">'+safe(b.buyerEmail||"Email unavailable")+'</td><td style="padding:10px">'+b.quantity+'</td>'+
-      '<td style="padding:10px">$'+(b.amountCents/100).toFixed(2)+'</td><td style="padding:10px">'+safe(b.status)+'</td></tr>').join("")+
+      '<td style="padding:10px">$'+(b.amountCents/100).toFixed(2)+'</td><td style="padding:10px">'+safe(b.status)+(b.status==="paid"?'<button type="button" class="btn secondary small ms-guest-link" data-booking="'+safe(b.registrationId)+'">Copy guest link</button><button type="button" class="btn secondary small ms-revoke-link" data-booking="'+safe(b.registrationId)+'">Revoke</button>':'')+'</td></tr>').join("")+
       '</tbody></table></div>':'<p>No bookings recorded for this event.</p>';
     const attendeesHtml=paid.length?paid.map((b,index)=>
       '<section style="padding:19px 0;border-bottom:1px solid #dfcbc5"><div style="margin-bottom:12px;font-size:12px">'+
