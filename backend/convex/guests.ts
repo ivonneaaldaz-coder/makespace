@@ -53,7 +53,7 @@ export const saveGuest = mutation({
     if(!registration||registration.status!=="paid")throw Error("Active paid booking required");
     if(!Number.isInteger(seatNumber)||seatNumber<1||seatNumber>registration.quantity)
       throw Error("Invalid seat number");
-    const clean=name.trim().replace(/\\s+/g," ");
+    const clean=name.trim().replace(/\s+/g," ");
     if(clean.length>100)throw Error("Name too long");
     const previous=await ctx.db.query("bookingGuests")
       .withIndex("by_registration_seat",q=>q.eq("registrationId",registrationId).eq("seatNumber",seatNumber)).unique();
