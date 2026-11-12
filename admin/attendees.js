@@ -8,6 +8,7 @@
   controls.insertAdjacentHTML("beforeend",'<div style="display:flex;gap:9px;align-items:center;flex-wrap:wrap;margin-top:10px"><button type="button" class="btn secondary small" id="verify-square">Link ticket</button><span id="square-verify-status" style="color:#806c71;font-size:11px">Link a ticket to track bookings automatically</span></div>');
   $("editor-view").insertAdjacentHTML("beforeend",'<button type="button" id="attendees-button" hidden style="display:none" tabindex="-1">Load attendees</button>');
   $("editor-view").insertAdjacentHTML("beforeend",'<section id="attendees-panel" class="surface" hidden style="padding:24px;margin:20px 0;min-width:0"></section>');
+  controls.insertAdjacentHTML("beforeend", '<div id="square-catalog-picker" hidden style="margin-top:12px"><label for="square-ticket" style="font-size:11px;font-weight:700;display:block;margin-bottom:6px">SELECT THE TICKET</label><select id="square-ticket" style="width:100%;padding:12px;background:#fff;border:1px solid #decfc8;border-radius:9px"><option value="">Select the ticket for this event</option></select><p style="font-size:11px;color:#806c71">Choose the matching Square ticket and price.</p></div>');
   let savedVariation="",savedCheckout="",requestNumber=0;
   const picker=$("square-catalog-picker");
   picker.insertAdjacentHTML("beforeend",'<button type="button" class="btn secondary small" id="square-ticket-cancel" style="margin-top:10px">Cancel</button>');
