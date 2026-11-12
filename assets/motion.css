@@ -1,0 +1,28 @@
+/* MAKE SPACE — restrained motion. Reduced-motion preferences always win. */
+@media (prefers-reduced-motion: no-preference){
+  a.backlink,a.link,a.underlink,.footer-links a,nav a:not(.button),.navlinks a:not(.button),.footer-bottom a:not(.bigbrand),.tiny a{
+    text-decoration:none;transition:color .25s ease,opacity .25s ease,transform .3s cubic-bezier(.2,.75,.25,1);
+  }
+  a.backlink:hover,a.link:hover,a.underlink:hover{transform:translateX(5px)}
+  .footer-links a{display:inline-block}
+  .footer-links a:hover,.footer-bottom a:not(.bigbrand):hover{transform:translateY(-3px);opacity:.75}
+  .footer-links a:focus-visible,nav a:focus-visible,.monthnav button:focus-visible,.control:focus-visible{
+    outline:2px solid #b68b96;outline-offset:4px
+  }
+  .monthnav button,.control,.monthhead-controls button,.monthhead-controls select,.ms-calendar-tools button,
+  .btn,.button,.booking,.submit,.signup button{transition:background-color .25s ease,color .25s ease,transform .25s ease,box-shadow .25s ease}
+  .monthnav button:not(.active):hover{transform:translateY(-3px);background:#d8c1bc;box-shadow:0 5px 15px #50192310}
+  .control:hover,.monthhead-controls button:hover{transform:translateY(-2px);background:#e3d1cc}
+  .control:active,.monthnav button:active{transform:scale(.96)}
+  .signup button:hover{transform:translate(3px,-3px)}
+  .experience-image,.hero .float,.gallery img,.photo,.event img,.private img,.about img{transition:transform .8s cubic-bezier(.2,.7,.2,1),filter .8s ease}
+  .experience-image:hover,.event:hover img{transform:scale(1.012);filter:saturate(1.07)}
+  .ms-reveal{opacity:0;transform:translateY(22px);transition:opacity .85s ease,transform .85s cubic-bezier(.2,.7,.2,1)}
+  .ms-reveal.ms-visible{opacity:1;transform:translateY(0)}
+  .ms-swipe-in{opacity:0;transform:translateX(-42px);transition:opacity .9s ease,transform .9s cubic-bezier(.2,.7,.2,1)}
+  .ms-swipe-in.ms-right{transform:translateX(42px)}
+  .ms-swipe-in.ms-visible{opacity:1;transform:translateX(0)}
+}
+@media(prefers-reduced-motion:reduce){
+  .ms-reveal,.ms-swipe-in{opacity:1!important;transform:none!important;transition:none!important}
+}
