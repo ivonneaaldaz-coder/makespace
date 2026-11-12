@@ -45,6 +45,7 @@ export default defineSchema({
     eventId: v.id("events"),
     squarePaymentId: v.string(),
     squareOrderId: v.string(),
+    guestLinkHash: v.optional(v.string()),
     buyerEmail: v.optional(v.string()),
     buyerName: v.optional(v.string()),
     quantity: v.number(),
@@ -56,7 +57,8 @@ export default defineSchema({
     ownerNotificationStatus: v.optional(v.union(v.literal("pending"),v.literal("sent"),v.literal("failed"))),
     ownerNotificationSentAt: v.optional(v.number()),
     createdAt: v.number(),
-  }).index("by_payment", ["squarePaymentId"]).index("by_event", ["eventId"]),
+  }).index("by_payment", ["squarePaymentId"]).index("by_event", ["eventId"])
+    .index("by_guest_link", ["guestLinkHash"]),
   bookingGuests: defineTable({
     registrationId: v.id("registrations"),
     seatNumber: v.number(),
