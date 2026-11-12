@@ -57,6 +57,14 @@ export default defineSchema({
     ownerNotificationSentAt: v.optional(v.number()),
     createdAt: v.number(),
   }).index("by_payment", ["squarePaymentId"]).index("by_event", ["eventId"]),
+  bookingGuests: defineTable({
+    registrationId: v.id("registrations"),
+    seatNumber: v.number(),
+    name: v.optional(v.string()),
+    checkedInAt: v.optional(v.number()),
+    updatedAt: v.number(),
+  }).index("by_registration", ["registrationId"])
+    .index("by_registration_seat", ["registrationId", "seatNumber"]),
   squareWebhooks: defineTable({
     eventId: v.string(),
     type: v.string(),
