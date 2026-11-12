@@ -64,7 +64,7 @@
     if(!$("monthnav") || !$("days"))return;
     let events=[];
     const now=new Date();
-    let year=now.getFullYear(),month=now.getMonth();
+    let year=Math.max(2027,now.getFullYear()),month=now.getFullYear()<2027?0:now.getMonth();
     const saved=new URLSearchParams(location.search);
     if(/^20\d{2}$/.test(saved.get("year")||""))year=Number(saved.get("year"));
     if(/^(?:[0-9]|1[01])$/.test(saved.get("month")||""))month=Number(saved.get("month"));
