@@ -99,7 +99,7 @@
         '<a href="'+urlFor(e)+'" class="event"><div class="date">'+escape(dateText(e.date))+
         " · "+escape(e.category)+"</div><h3>"+escape(e.title)+"</h3><span class=\"status\">"+
         (e.status==="sold_out"?"Sold out":"View experience ↗")+"</span></a>").join(""):
-        '<p class="note">Nothing announced for this month yet. Check back for new gatherings.</p>';
+        '<p class="note">No events scheduled for this month.</p>';
       const u=new URL(location.href);u.searchParams.set("year",year);u.searchParams.set("month",month);
       history.replaceState(null,"",u);
     }
