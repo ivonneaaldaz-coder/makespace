@@ -71,12 +71,15 @@ function intoEditor(e) {
     time: e.time, duration: e.duration, venue: e.venue, price: e.priceCents / 100,
     capacity: e.capacity, description: e.description, image: e.imageExternalUrl || "",
     imageStorageId: e.imageStorageId || null, squareVariationId: e.squareVariationId || "", imageData: "",
-    checkout: e.checkoutUrl || "", notes: e.notes, featured: e.featured
+    checkout: e.checkoutUrl || "", notes: e.notes, featured: e.featured,
+    historical:!!e.historical,ticketsSold:e.ticketsSold??0,attendeesActual:e.attendeesActual??0,
+    expensesCents:e.expensesCents??0,actualRevenueCents:e.actualRevenueCents??null
   };
 }
 async function loadEvents() {
   events = (await call("query", "events:listAdmin")).map(intoEditor);
   go("events");
+  window.makeSpaceRefreshPerformance?.();
 }
 async function upload(dataUrl) {
   if (!dataUrl?.startsWith("data:image/jpeg;base64,")) return null;
@@ -93,7 +96,7 @@ async function saveEvent(e) {
   if (!ready) return;
   if (!$("event-form").reportValidity()) return;
   const data = readForm();
-  if (data.checkout) {
+  if (data.checkout && !data.historical) {
     try {
       const payment = new URL(data.checkout);
       if (payment.protocol !== "https:" ||
@@ -125,8 +128,13 @@ async function saveEvent(e) {
       imageStorageId,
       // Explicit undefined clears a removed/replaced legacy image on existing events.
       imageExternalUrl: !artworkRemoved && !imageData && !imageStorageId ? prior?.image || undefined : undefined,
-      checkoutUrl: data.checkout || "",
-      ...(data.checkout && window.makeSpaceSquareVariation ? { squareVariationId:window.makeSpaceSquareVariation } : {})
+      historical:!!data.historical,
+      ticketsSold:data.historical?data.ticketsSold:undefined,
+      attendeesActual:data.historical?data.attendeesActual:undefined,
+      actualRevenueCents:data.historical?(data.actualRevenueCents??undefined):undefined,
+      expensesCents:data.expensesCents,
+      checkoutUrl: data.historical?"":data.checkout || "",
+      ...(!data.historical && data.checkout && window.makeSpaceSquareVariation ? { squareVariationId:window.makeSpaceSquareVariation } : {})
     };
     await call("mutation", "events:upsert", { ...(editing ? {id: editing} : {}), event: formEvent });
     imageData = "";
@@ -162,9 +170,13 @@ async function duplicateEvent(sourceId = editing) {
       timezone: "America/Chicago", duration: e.duration, venue: e.venue,
       priceCents: Math.round(e.price * 100), capacity: e.capacity,
       description: e.description, featured: false, notes: e.notes,
+      historical:!!e.historical,ticketsSold:e.historical?(e.ticketsSold??0):undefined,
+      attendeesActual:e.historical?(e.attendeesActual??0):undefined,
+      actualRevenueCents:e.historical?(e.actualRevenueCents??undefined):undefined,
+      expensesCents:e.expensesCents??undefined,
       ...(e.imageStorageId ? {imageStorageId: e.imageStorageId} : {}),
       ...(e.image ? {imageExternalUrl:e.image} : {}),
-      ...(e.checkout ? {checkoutUrl:e.checkout} : {})
+      ...(!e.historical && e.checkout ? {checkoutUrl:e.checkout} : {})
     }});
     await loadEvents(); toast("Draft duplicate saved");
   } catch(err) { toast(errorMessage(err)); }
