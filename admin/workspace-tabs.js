@@ -19,6 +19,7 @@ attendees.hidden=true; // The tab replaces the floating old button.
 function activate(which){
   const isGuest=which==="attendees";
   if(isGuest&&(!editing||!events.some(e=>e.id===editing)))return;
+  if(isGuest)window.makeSpaceHideReadOnly?.();
   detailTab.setAttribute("aria-selected",String(!isGuest));
   guestTab.setAttribute("aria-selected",String(isGuest));
   guestTab.disabled=!editing;
@@ -35,7 +36,11 @@ function activate(which){
     editor.querySelector(".editorhead .subtitle").textContent="Edit the details and save securely to your Studio Manager.";
   }
 }
-detailTab.addEventListener("click",()=>activate("details"));
+detailTab.addEventListener("click",()=>{
+  if(editing && events.some(e=>e.id===editing) && window.makeSpaceShowReadOnly){
+    window.makeSpaceShowReadOnly();
+  }else activate("details");
+});
 guestTab.addEventListener("click",()=>activate("attendees"));
 window.makeSpaceResetWorkspace=()=>activate("details");
 activate("details");
