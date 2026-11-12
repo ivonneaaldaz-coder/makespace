@@ -151,46 +151,59 @@
   function renderBookingManager(event,report){
     const panel=$("attendees-panel");
     const active=report.bookings.filter(b=>b.status==="paid");
-    const checked=active.reduce((n,b)=>n+b.seats.filter(seat=>seat.checkedInAt).length,0);
-    const revenue=active.reduce((n,b)=>n+b.amountCents,0);
-    const head='<div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px">'+
+    const total=active.reduce((sum,b)=>sum+b.quantity,0);
+    const attended=active.reduce((sum,b)=>sum+b.seats.filter(seat=>seat.checkedInAt).length,0);
+    const revenue=active.reduce((sum,b)=>sum+b.amountCents,0);
+    const header='<div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px">'+
       '<h3 style="font:400 34px Italiana,Georgia,serif;margin:0">Guest list</h3>'+
       '<button type="button" class="btn secondary small" id="download-guest-csv">Export CSV ↓</button></div>'+
-      '<p style="font-size:12px;margin:14px 0 24px">'+active.length+' bookings · '+report.paidSeats+' tickets · '+checked+' checked in · $'+(revenue/100).toFixed(2)+' gross</p>'+
-      '<p style="font-size:12px;color:#765d63;margin:0 0 18px">Guests can check in under the purchaser’s name. You only need to count how many of their group have arrived.</p>';
-    const body=active.length?active.map(b=>{
-      const arrived=b.seats.filter(seat=>seat.checkedInAt).length;
-      return '<div class="ms-booking-checkin" data-registration="'+safe(b.registrationId)+'" '+
-        'style="display:grid;grid-template-columns:minmax(0,1fr) auto;gap:16px;align-items:center;padding:19px 0;border-bottom:1px solid #dfcbc5">'+
-        '<div style="min-width:0"><strong style="font-size:15px">'+safe(b.buyerName||"Purchaser name unavailable")+'</strong>'+
-        '<p style="font-size:12px;color:#765d63;margin:6px 0;overflow-wrap:anywhere">'+safe(b.buyerEmail||"No email provided")+'</p>'+
-        '<p style="font-size:12px;margin:6px 0">'+b.quantity+' ticket'+(b.quantity===1?"":"s")+' purchased</p></div>'+
-        '<div style="display:flex;align-items:center;gap:10px;flex-wrap:nowrap">'+
-        '<button type="button" class="btn secondary small ms-check-minus" aria-label="Check out one guest" '+(arrived===0||report.isFallback?"disabled":"")+'>−</button>'+
-        '<strong style="font-size:14px;white-space:nowrap">'+arrived+' / '+b.quantity+'</strong>'+
-        '<button type="button" class="btn secondary small ms-check-plus" aria-label="Check in one guest" '+(arrived>=b.quantity||report.isFallback?"disabled":"")+'>+</button></div>'+
-        '</div>';
-    }).join(""):'<p>No paid bookings recorded for this event yet.</p>';
-    panel.innerHTML=head+(report.isFallback?'<p role="status" style="font-size:12px;color:#806269">Paid bookings recovered from Square. Check-in controls are temporarily unavailable; refresh to retry.</p>':"")+body+'<p style="font-size:11px;color:#806269;margin-top:18px">Square is the source of truth for payment and ticket quantity. Check-in counts can never exceed purchased tickets.</p>';
+      '<p style="font-size:12px;margin:14px 0 24px">'+active.length+' booking'+(active.length===1?'':'s')+
+      ' · '+total+' guest'+(total===1?'':'s')+' · '+attended+' attended · $'+(revenue/100).toFixed(2)+' gross</p>';
+    const items=active.length?active.map(b=>{
+      const present=b.seats.filter(seat=>seat.checkedInAt).length;
+      const single=b.quantity===1;
+      const controls=single?
+        '<div class="ms-attended-toggle" aria-label="Attended?"><span style="font-size:11px;white-space:nowrap">Attended?</span>'+
+        '<button type="button" class="btn secondary small ms-mark-yes" aria-pressed="'+(present===1)+'" '+(report.isFallback?'disabled':'')+'>Yes</button>'+
+        '<button type="button" class="btn secondary small ms-mark-no" aria-pressed="'+(present===0)+'" '+(report.isFallback?'disabled':'')+'>No</button></div>':
+        '<div class="ms-group-count"><span style="font-size:11px;white-space:nowrap">Checked in</span>'+
+        '<button type="button" class="btn secondary small ms-check-minus" aria-label="Check out one guest" '+(present===0||report.isFallback?'disabled':'')+'>−</button>'+
+        '<strong style="font-size:13px;white-space:nowrap">'+present+' of '+b.quantity+'</strong>'+
+        '<button type="button" class="btn secondary small ms-check-plus" aria-label="Check in one guest" '+(present>=b.quantity||report.isFallback?'disabled':'')+'>+</button></div>';
+      return '<div class="ms-booking-checkin" data-registration="'+safe(b.registrationId)+'">'+
+        '<div><strong style="font-size:15px">'+safe(b.buyerName||b.buyerEmail||"Purchaser not named")+'</strong>'+
+        '<p style="font-size:12px;color:#765d63;margin:6px 0;overflow-wrap:anywhere">'+safe(b.buyerEmail||"Email unavailable")+'</p>'+
+        '<p style="font-size:12px;margin:6px 0">'+b.quantity+' guest'+(single?'':'s')+' on this booking</p></div>'+
+        controls+'</div>';
+    }).join(""):'<p>No paid bookings for this event yet.</p>';
+    panel.innerHTML=header+(report.isFallback?'<p role="status" style="font-size:12px;color:#806269">Showing paid bookings. Check-in is temporarily unavailable.</p>':'')+items+
+      '<p style="font-size:11px;color:#806269;margin-top:18px">Guests can check in under the purchaser’s name. Attendance never exceeds the number of tickets purchased.</p>';
     $("download-guest-csv").addEventListener("click",()=>csvDownload(event,report));
     panel.querySelectorAll(".ms-booking-checkin").forEach(row=>{
       const booking=active.find(b=>b.registrationId===row.dataset.registration);
-      if(!booking)return;
-      for(const direction of ["plus","minus"]){
-        row.querySelector(".ms-check-"+direction).addEventListener("click",async()=>{
-          const seat=direction==="plus"?
-            booking.seats.find(s=>!s.checkedInAt):
-            [...booking.seats].reverse().find(s=>s.checkedInAt);
-          if(!seat)return;
-          row.querySelectorAll("button").forEach(btn=>btn.disabled=true);
-          try{
-            await window.makeSpaceCloud.request("mutation","guests:setCheckIn",{
-              registrationId:booking.registrationId,seatNumber:seat.seatNumber,checkedIn:direction==="plus"
-            });
-            const fresh=await loadAttendees(event);
-            renderBookingManager(event,fresh);
-          }catch(err){alert("Check-in could not be saved: "+String(err.message||err).slice(0,160));renderBookingManager(event,report)}
-        });
+      if(!booking||report.isFallback)return;
+      async function changeAttendance(direction){
+        const seat=direction==="plus"?booking.seats.find(seat=>!seat.checkedInAt):[...booking.seats].reverse().find(seat=>seat.checkedInAt);
+        if(!seat)return;
+        row.querySelectorAll("button").forEach(button=>button.disabled=true);
+        try{
+          await window.makeSpaceCloud.request("mutation","guests:setCheckIn",{
+            registrationId:booking.registrationId,seatNumber:seat.seatNumber,checkedIn:direction==="plus"
+          });
+          const updated=await window.makeSpaceCloud.request("query","guests:listForEvent",{eventId:event.id});
+          if(document.querySelector('#ms-tab-attendees[aria-selected="true"]'))renderBookingManager(event,updated);
+        }catch(error){
+          alert("Attendance could not be saved: "+String(error.message||error).slice(0,160));
+          renderBookingManager(event,report);
+        }
+      }
+      const single=booking.quantity===1;
+      if(single){
+        row.querySelector(".ms-mark-yes").addEventListener("click",()=>changeAttendance("plus"));
+        row.querySelector(".ms-mark-no").addEventListener("click",()=>changeAttendance("minus"));
+      }else{
+        row.querySelector(".ms-check-plus").addEventListener("click",()=>changeAttendance("plus"));
+        row.querySelector(".ms-check-minus").addEventListener("click",()=>changeAttendance("minus"));
       }
     });
   }
