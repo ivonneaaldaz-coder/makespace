@@ -131,6 +131,22 @@
     a.href=url;a.download="make-space-"+String(event.slug||"event").replace(/[^a-z0-9-]/gi,"-")+"-guest-list.csv";
     document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),1000);
   }
+
+  async function loadAttendees(event){
+    const query=(path)=>window.makeSpaceCloud.request("query",path,{eventId:event.id});
+    const deadline=(promise,ms)=>Promise.race([promise,new Promise((_,reject)=>setTimeout(()=>reject(Error("Timed out")),ms))]);
+    try{
+      return await deadline(query("guests:listForEvent"),7000);
+    }catch(err){
+      const original=await deadline(query("square:listAttendees"),10000);
+      return {eventTitle:original.eventTitle,capacity:original.capacity,paidSeats:original.seatsSold,isFallback:true,
+        bookings:original.rows.map(r=>({
+          registrationId:r._id,buyerName:r.buyerName,buyerEmail:r.buyerEmail,quantity:r.quantity,
+          amountCents:r.amountCents,status:r.status,squarePaymentId:r.squarePaymentId,
+          seats:Array.from({length:r.quantity},(_,i)=>({seatNumber:i+1,name:"",checkedInAt:null}))
+        }))};
+    }
+  }
   function renderBookingManager(event,report){
     const panel=$("attendees-panel");
     const active=report.bookings.filter(b=>b.status==="paid");
@@ -149,12 +165,12 @@
         '<p style="font-size:12px;color:#765d63;margin:6px 0;overflow-wrap:anywhere">'+safe(b.buyerEmail||"No email provided")+'</p>'+
         '<p style="font-size:12px;margin:6px 0">'+b.quantity+' ticket'+(b.quantity===1?"":"s")+' purchased</p></div>'+
         '<div style="display:flex;align-items:center;gap:10px;flex-wrap:nowrap">'+
-        '<button type="button" class="btn secondary small ms-check-minus" aria-label="Check out one guest" '+(arrived===0?"disabled":"")+'>−</button>'+
+        '<button type="button" class="btn secondary small ms-check-minus" aria-label="Check out one guest" '+(arrived===0||report.isFallback?"disabled":"")+'>−</button>'+
         '<strong style="font-size:14px;white-space:nowrap">'+arrived+' / '+b.quantity+'</strong>'+
-        '<button type="button" class="btn secondary small ms-check-plus" aria-label="Check in one guest" '+(arrived>=b.quantity?"disabled":"")+'>+</button></div>'+
+        '<button type="button" class="btn secondary small ms-check-plus" aria-label="Check in one guest" '+(arrived>=b.quantity||report.isFallback?"disabled":"")+'>+</button></div>'+
         '</div>';
     }).join(""):'<p>No paid bookings recorded for this event yet.</p>';
-    panel.innerHTML=head+body+'<p style="font-size:11px;color:#806269;margin-top:18px">Square is the source of truth for payment and ticket quantity. Check-in counts can never exceed purchased tickets.</p>';
+    panel.innerHTML=head+(report.isFallback?'<p role="status" style="font-size:12px;color:#806269">Paid bookings recovered from Square. Check-in controls are temporarily unavailable; refresh to retry.</p>':"")+body+'<p style="font-size:11px;color:#806269;margin-top:18px">Square is the source of truth for payment and ticket quantity. Check-in counts can never exceed purchased tickets.</p>';
     $("download-guest-csv").addEventListener("click",()=>csvDownload(event,report));
     panel.querySelectorAll(".ms-booking-checkin").forEach(row=>{
       const booking=active.find(b=>b.registrationId===row.dataset.registration);
@@ -170,7 +186,7 @@
             await window.makeSpaceCloud.request("mutation","guests:setCheckIn",{
               registrationId:booking.registrationId,seatNumber:seat.seatNumber,checkedIn:direction==="plus"
             });
-            const fresh=await window.makeSpaceCloud.request("query","guests:listForEvent",{eventId:event.id});
+            const fresh=await loadAttendees(event);
             renderBookingManager(event,fresh);
           }catch(err){alert("Check-in could not be saved: "+String(err.message||err).slice(0,160));renderBookingManager(event,report)}
         });
@@ -183,10 +199,10 @@
     panel.textContent="Loading bookings and attendee seats…";
     guestView="attendees";
     try{
-      const report=await window.makeSpaceCloud.request("query","guests:listForEvent",{eventId:e.id});
+      const report=await loadAttendees(e);
       latestGuestReport=report;
       renderBookingManager(e,report);
-    }catch(err){panel.textContent="Could not load guest list: "+String(err.message||err).slice(0,200)}
+    }catch(err){panel.innerHTML="<p role=\"alert\">Could not load guest list: "+safe(String(err.message||err).slice(0,200))+"</p><button type=\"button\" class=\"btn secondary small\" id=\"retry-attendees\">Retry</button>";$("retry-attendees").onclick=()=>$("attendees-button").click()}
   });
   reset();
 })();
