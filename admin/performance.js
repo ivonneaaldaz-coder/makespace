@@ -34,19 +34,6 @@ async function refresh(){
   dropdown.innerHTML='<option value="all">All years</option>'+years.map(y=>'<option value="'+safe(y)+'">'+safe(y)+'</option>').join("");
   dropdown.value=years.includes(prior)?prior:"all";
   render();
-  const byYear=new Map();
-  latest.filter(r=>r.hasFinancialData).forEach(r=>{
-    const year=r.date.slice(0,4);
-    if(!byYear.has(year))byYear.set(year,{tickets:0,revenue:0,expenses:0,profit:0});
-    const y=byYear.get(year);
-    y.tickets+=r.tickets;y.revenue+=r.revenueCents;y.expenses+=r.expensesCents;y.profit+=r.profitCents;
-  });
-  const totalYears=[...byYear.entries()].sort(([a],[b])=>a.localeCompare(b));
-  const maxRevenue=Math.max(1,...totalYears.map(([,v])=>v.revenue));
-  $("ms-yearly-rows").innerHTML=totalYears.length?totalYears.map(([year,v])=>
-    '<div class="ms-year-row"><strong>'+safe(year)+'</strong><div class="ms-year-bar" aria-hidden="true"><span style="width:'+(v.revenue/maxRevenue*100).toFixed(1)+'%"></span></div>'+
-    '<strong title="Revenue">'+money(v.revenue)+'</strong><small title="Profit">Profit '+money(v.profit)+'</small></div>'
-  ).join(""):'<p style="font-size:12px;color:#80646d">Add your first past event to begin tracking annual growth.</p>';
  }catch(err){
   $("ms-performance-rows").innerHTML='<tr><td colspan="6">Performance is temporarily unavailable. Refresh to try again.</td></tr>';
  }
