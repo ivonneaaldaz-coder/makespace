@@ -113,6 +113,20 @@ export const getPublicBySlug = query({
   },
 });
 
+/** Public seat count reflects verified Square payments recorded so far.
+ * Square checkout must separately enforce inventory; this query does not reserve seats.
+ */
+export const availability = query({
+  args: { slug: v.string() },
+  handler: async (ctx,{slug}) => {
+    const event=await ctx.db.query("events").withIndex("by_slug",q=>q.eq("slug",slug)).unique();
+    if(!event||event.status==="draft")return null;
+    const paid=await ctx.db.query("registrations").withIndex("by_event",q=>q.eq("eventId",event._id)).collect();
+    const sold=paid.filter(r=>r.status==="paid").reduce((n,r)=>n+r.quantity,0);
+    return {capacity:event.capacity,sold,remaining:Math.max(0,event.capacity-sold),status:event.status};
+  }
+});
+
 export const listAdmin = query({
   args: {},
   handler: async (ctx) => {
