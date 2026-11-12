@@ -94,6 +94,17 @@ input[type="submit"],a[role="button"],a.square-checkout,.booking,.submit,
 .ms-finance-table td:first-child{font-weight:600;color:#501923}
 @media(max-width:850px){.ms-finance-stats{grid-template-columns:repeat(3,minmax(0,1fr))}}
 @media(max-width:550px){.ms-history-grid{grid-template-columns:1fr}.ms-finance-stats{grid-template-columns:repeat(2,minmax(0,1fr))}}
+</style><style id="ms-yearly-style">
+.ms-yearly{border-top:1px solid #e5d8d0;margin-top:30px;padding-top:24px}
+.ms-yearly h3{font:400 32px "Italiana",serif;color:#501923;margin:0 0 6px}
+.ms-yearly>p{font-size:12px;color:#80646d;margin:0 0 20px}
+.ms-yearly-rows{display:grid;gap:10px}
+.ms-year-row{display:grid;grid-template-columns:70px minmax(100px,1fr) 120px 120px;gap:14px;align-items:center;font:500 12px "DM Sans",sans-serif}
+.ms-year-bar{height:10px;background:#eee1db;border-radius:8px;overflow:hidden}
+.ms-year-bar span{display:block;height:100%;background:#501923;border-radius:8px}
+.ms-year-row strong{color:#501923;white-space:nowrap;text-align:right}
+.ms-year-row small{color:#80646d;text-align:right}
+@media(max-width:680px){.ms-year-row{grid-template-columns:50px minmax(50px,1fr) 80px;gap:8px}.ms-year-row small{grid-column:3}.ms-year-row strong{font-size:11px}}
 </style></head><body>
 
 <section id="access-gate" aria-label="Sign in to MAKE SPACE Studio Manager"><div class="access-card">
@@ -125,6 +136,7 @@ input[type="submit"],a[role="button"],a.square-checkout,.booking,.submit,
   <div><span>Profit</span><strong id="ms-perf-profit">—</strong></div>
 </div>
 <div class="ms-finance-scroll"><table class="ms-finance-table"><thead><tr><th>Experience</th><th>Date</th><th>Guests / tickets</th><th>Revenue</th><th>Expenses</th><th>Profit</th></tr></thead><tbody id="ms-performance-rows"><tr><td colspan="6">Loading performance…</td></tr></tbody></table></div>
+<div class="ms-yearly"><h3>Year by year.</h3><p>Recorded event performance over time.</p><div id="ms-yearly-rows" class="ms-yearly-rows"></div></div>
 </div>
 <div class="sectiontop"><h2>Experiences</h2><div class="toolbar"><button class="btn secondary" id="export" title="Download a backup of event details and settings. Does not include ticket purchases or guest lists.">↓ Download backup</button><button class="btn" id="add">+ New experience</button></div></div>
 <div class="surface"><div class="tabletools"><input id="search" class="search" type="search" placeholder="Search experiences…" aria-label="Search events"><select id="filter" class="field" aria-label="Filter status"><option value="all">All statuses</option><option value="historical">Historical</option><option value="draft">Draft</option><option value="published">Published</option><option value="sold-out">Sold out</option></select><select id="year" class="field" aria-label="Filter year"><option value="all">All dates</option><option value="2026">2026</option><option value="2027">2027</option><option value="2028">2028</option></select></div><div class="tablewrap"><table><thead><tr><th>Event</th><th>Date</th><th>Type</th><th>Tickets</th><th>Capacity</th><th>Status</th><th></th></tr></thead><tbody id="rows"></tbody></table></div><div class="empty" id="empty" hidden>No experiences match your filters.</div></div><p class="footnote">Event details are saved automatically to your connected workspace. Download a backup for safekeeping; guest lists are exported separately.</p></section>
