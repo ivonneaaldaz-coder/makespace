@@ -55,7 +55,7 @@ window.makeSpaceShowReadOnly=showReadOnly;
 window.makeSpaceHideReadOnly=()=>{
   card.hidden=true;
   tabs&&(tabs.hidden=false);
-  form.hidden=false;
+  form.hidden=editor.classList.contains("ms-attendees-active");
 };
 editor.querySelectorAll(".ms-workspace-tab").forEach(tab=>tab.addEventListener("click",()=>window.makeSpaceHideReadOnly()));
 const originalReset=window.makeSpaceResetWorkspace;
