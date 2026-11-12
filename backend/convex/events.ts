@@ -192,6 +192,10 @@ export const upsert = mutation({
     if (id) {
       const old = await ctx.db.get(id);
       if (!old) throw new ConvexError("Event not found");
+      if(event.historical && !old.historical){
+        const payment=await ctx.db.query("registrations").withIndex("by_event",q=>q.eq("eventId",id)).first();
+        if(payment)throw new ConvexError("This event has Square payment history and cannot be converted to manual historical tracking.");
+      }
       await ctx.db.patch(id, {
         ...event,
         // Deleting or changing the link invalidates the prior mapping.
