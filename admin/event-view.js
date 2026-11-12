@@ -51,10 +51,8 @@ function showReadOnly(){
  card.innerHTML='<div class="ms-overview-grid">'+fields+'</div>'+
    (e.description?'<div class="ms-overview-item"><span>Description</span><p class="ms-overview-notes">'+esc(e.description)+'</p></div>':"")+
    (e.notes?'<div class="ms-overview-item"><span>Internal notes · admins only</span><p class="ms-overview-notes">'+esc(e.notes)+'</p></div>':"")+
-   '<div class="ms-overview-actions"><button type="button" class="btn" id="ms-overview-edit">Edit experience</button>'+
-   '<button type="button" class="btn secondary" id="ms-overview-attendees">Attendees</button></div>';
+   '<div class="ms-overview-actions"><button type="button" class="btn" id="ms-overview-edit">Edit experience</button></div>';
  $("ms-overview-edit").addEventListener("click",()=>{openEditor(e.id)});
- $("ms-overview-attendees").addEventListener("click",()=>{openEditor(e.id);$("ms-tab-attendees")?.click()});
 }
 window.makeSpaceShowReadOnly=showReadOnly;
 window.makeSpaceEnterEditMode=()=>{
