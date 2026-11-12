@@ -44,10 +44,18 @@ function showReadOnly(){
  card.hidden=false;
  $("editor-title").textContent=e.title;
  editor.querySelector(".editorhead .subtitle").textContent="Experience overview";
+ const performance=window.makeSpaceEventPerformance?.(e.id);
+ const currencyValue=c=>new Intl.NumberFormat("en-US",{style:"currency",currency:"USD"}).format(c/100);
+ const financialDetails=performance?.hasFinancialData?
+   field("Tickets sold",performance.tickets)+
+   (e.historical?field("Guests attended",performance.attendees):"")+
+   field("Gross revenue",currencyValue(performance.revenueCents))+
+   field("Expenses",currencyValue(performance.expensesCents))+
+   field("Profit",currencyValue(performance.profitCents)):"";
  const price=Number(e.price||0);
  const fields=field("Date",typeof displayDate==="function"?displayDate(e.date):e.date)+field("Time",e.time||"TBD")+
    field("Venue",e.venue)+field("Experience type",e.category)+field("Ticket price","$"+price.toFixed(2))+
-   field("Capacity",e.capacity+" guests")+field("Duration",e.duration+" minutes")+field("Status",e.status);
+   field("Capacity",e.capacity+" "+(e.capacity===1?"guest":"guests"))+field("Duration",e.duration+" minutes")+field("Status",e.historical?"Historical":e.status);
  card.innerHTML='<div class="ms-overview-grid">'+fields+'</div>'+
    (e.description?'<div class="ms-overview-item"><span>Description</span><p class="ms-overview-notes">'+esc(e.description)+'</p></div>':"")+
    (e.notes?'<div class="ms-overview-item"><span>Internal notes · admins only</span><p class="ms-overview-notes">'+esc(e.notes)+'</p></div>':"")+
