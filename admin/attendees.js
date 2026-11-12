@@ -83,92 +83,68 @@
     setTimeout(()=>URL.revokeObjectURL(url),1000);
   }
 
-  let latestGuestReport=null;
-  let guestView="attendees";
-  function renderBookingManager(event,report){
-    const panel=$("attendees-panel");
-    const bookings=report.bookings;
-    const paid=bookings.filter(b=>b.status==="paid");
-    const gross=paid.reduce((total,b)=>total+b.amountCents,0);
-    const header='<div style="display:flex;flex-wrap:wrap;gap:12px;align-items:center;justify-content:space-between;margin-bottom:14px">'+
-      '<h3 style="font:400 34px Italiana,Georgia,serif;margin:0">Guest list</h3>'+
-      '<div style="display:flex;gap:8px;flex-wrap:wrap"><button type="button" class="btn secondary small" id="guest-view-attendees" aria-pressed="'+(guestView==="attendees")+'">Attendees</button>'+
-      '<button type="button" class="btn secondary small" id="guest-view-bookings" aria-pressed="'+(guestView==="bookings")+'">Bookings</button>'+
-      '<button type="button" class="btn secondary small" id="download-guest-csv">Export CSV ↓</button></div></div>'+
-      '<p style="font-size:12px;margin-bottom:22px">'+report.paidSeats+' paid seats · '+report.identified+' named · '+report.checkedIn+
-      ' checked in · $'+(gross/100).toFixed(2)+' gross</p>';
-    const bookingsHtml=bookings.length?'<div style="overflow-x:auto"><table style="width:100%;text-align:left;font-size:12px;border-collapse:collapse"><thead>'+
-      '<tr><th style="padding:10px">Purchaser</th><th style="padding:10px">Email</th><th style="padding:10px">Tickets</th><th style="padding:10px">Paid</th><th style="padding:10px">Payment</th></tr></thead><tbody>'+
-      bookings.map(b=>'<tr><td style="padding:10px">'+safe(b.buyerName||"Name not provided")+'</td>'+
-      '<td style="padding:10px">'+safe(b.buyerEmail||"Email unavailable")+'</td><td style="padding:10px">'+b.quantity+'</td>'+
-      '<td style="padding:10px">$'+(b.amountCents/100).toFixed(2)+'</td><td style="padding:10px">'+safe(b.status)+(b.status==="paid"?'<button type="button" class="btn secondary small ms-guest-link" data-booking="'+safe(b.registrationId)+'">Copy guest link</button><button type="button" class="btn secondary small ms-revoke-link" data-booking="'+safe(b.registrationId)+'">Revoke</button>':'')+'</td></tr>').join("")+
-      '</tbody></table></div>':'<p>No bookings recorded for this event.</p>';
-    const attendeesHtml=paid.length?paid.map((b,index)=>
-      '<section style="padding:19px 0;border-bottom:1px solid #dfcbc5"><div style="margin-bottom:12px;font-size:12px">'+
-      '<strong>Booking '+(index+1)+'</strong> · '+b.quantity+' seat'+(b.quantity===1?"":"s")+
-      ' · Purchaser: '+safe(b.buyerName||b.buyerEmail||"Not provided")+'</div>'+
-      b.seats.map(seat=>{
-        const rid=safe(b.registrationId),number=seat.seatNumber;
-        return '<div class="ms-guest-row" data-registration="'+rid+'" data-seat="'+number+'" '+
-          'style="display:grid;grid-template-columns:minmax(0,1fr) auto;gap:10px;align-items:end;margin:13px 0">'+
-          '<label style="font-size:11px;display:grid;gap:6px;min-width:0">Guest '+number+
-          '<input type="text" class="ms-guest-name" maxlength="100" autocomplete="off" placeholder="Name not provided" value="'+safe(seat.name)+
-          '" style="min-width:0;width:100%;padding:11px;border:1px solid #d7c7c1;background:#fffaf5;color:#501923"></label>'+
-          '<div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">'+
-          '<button type="button" class="btn secondary small ms-save-guest">Save name</button>'+
-          '<label style="display:flex;align-items:center;gap:7px;font-size:11px;white-space:nowrap">'+
-          '<input type="checkbox" class="ms-checkin" '+(seat.checkedInAt?'checked ':'')+'style="accent-color:#501923"> Checked in</label></div></div>';
-      }).join("")+'</section>').join(""):'<p>No paid attendees recorded for this event.</p>';
-    panel.innerHTML=header+(guestView==="bookings"?bookingsHtml:attendeesHtml)+
-      '<p style="font-size:11px;color:#806269;margin-top:18px">Names and check-ins are managed here. Square remains the payment source of truth. Blank names mean guest details have not been collected.</p>';
-    $("guest-view-attendees").addEventListener("click",()=>{guestView="attendees";renderBookingManager(event,report)});
-    $("guest-view-bookings").addEventListener("click",()=>{guestView="bookings";renderBookingManager(event,report)});
-    $("download-guest-csv").addEventListener("click",()=>downloadAllSeats(event,report));
-    panel.querySelectorAll(".ms-guest-row").forEach(row=>{
-      const rid=row.dataset.registration,seatNumber=Number(row.dataset.seat);
-      row.querySelector(".ms-save-guest").addEventListener("click",async()=>{
-        const button=row.querySelector(".ms-save-guest");
-        button.disabled=true;button.textContent="Saving…";
-        try{
-          await window.makeSpaceCloud.request("mutation","guests:saveGuest",{
-            registrationId:rid,seatNumber,name:row.querySelector(".ms-guest-name").value
-          });
-          const refreshed=await window.makeSpaceCloud.request("query","guests:listForEvent",{eventId:event.id});
-          latestGuestReport=refreshed;renderBookingManager(event,refreshed);
-        }catch(err){button.textContent=String(err.message||err).slice(0,100);button.disabled=false;}
-      });
-      row.querySelector(".ms-checkin").addEventListener("change",async change=>{
-        const checkbox=change.currentTarget;
-        checkbox.disabled=true;
-        try{
-          await window.makeSpaceCloud.request("mutation","guests:setCheckIn",{
-            registrationId:rid,seatNumber,checkedIn:checkbox.checked
-          });
-          const refreshed=await window.makeSpaceCloud.request("query","guests:listForEvent",{eventId:event.id});
-          latestGuestReport=refreshed;renderBookingManager(event,refreshed);
-        }catch(err){checkbox.checked=!checkbox.checked;checkbox.disabled=false;window.alert("Check-in not saved: "+String(err.message||err).slice(0,160))}
-      });
-    });
-  }
-  function downloadAllSeats(e,report){
-    const encode=value=>{
-      let t=String(value??"").replace(/\\r|\\n/g," ");
-      if(/^\\s*[=+@-]/.test(t))t="'"+t;
+
+  function csvDownload(event,report){
+    const cell=value=>{
+      let t=String(value??"").replace(/\r|\n/g," ");
+      if(/^\s*[=+@-]/.test(t))t="'"+t;
       return '"'+t.replace(/"/g,'""')+'"';
     };
-    const cols=["Attendee name","Seat number","Checked in","Purchaser","Purchaser email","Booking seats","Payment status","Payment reference"];
-    const rows=[cols.map(encode).join(",")];
-    for(const booking of report.bookings){
-      for(const seat of booking.seats){
-        rows.push([seat.name,seat.seatNumber,seat.checkedInAt?"Yes":"No",
-          booking.buyerName,booking.buyerEmail,booking.quantity,booking.status,booking.squarePaymentId].map(encode).join(","));
-      }
+    const rows=[["Purchaser / booking contact","Email","Tickets purchased","Checked in","Paid USD","Payment status","Square payment ID"].map(cell).join(",")];
+    for(const b of report.bookings){
+      const count=b.seats.filter(seat=>seat.checkedInAt).length;
+      rows.push([b.buyerName||"Not provided",b.buyerEmail,b.quantity,count,(b.amountCents/100).toFixed(2),b.status,b.squarePaymentId].map(cell).join(","));
     }
-    const blob=new Blob(["\\uFEFF"+rows.join("\\r\\n")+"\\r\\n"],{type:"text/csv;charset=utf-8"});
-    const url=URL.createObjectURL(blob),anchor=document.createElement("a");
-    anchor.href=url;anchor.download="make-space-"+String(e.slug||"event").replace(/[^a-z0-9-]/gi,"-")+"-attendees.csv";
-    document.body.appendChild(anchor);anchor.click();anchor.remove();
-    setTimeout(()=>URL.revokeObjectURL(url),1000);
+    const blob=new Blob(["\uFEFF"+rows.join("\r\n")+"\r\n"],{type:"text/csv;charset=utf-8"});
+    const url=URL.createObjectURL(blob),a=document.createElement("a");
+    a.href=url;a.download="make-space-"+String(event.slug||"event").replace(/[^a-z0-9-]/gi,"-")+"-guest-list.csv";
+    document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),1000);
+  }
+  function renderBookingManager(event,report){
+    const panel=$("attendees-panel");
+    const active=report.bookings.filter(b=>b.status==="paid");
+    const checked=active.reduce((n,b)=>n+b.seats.filter(seat=>seat.checkedInAt).length,0);
+    const revenue=active.reduce((n,b)=>n+b.amountCents,0);
+    const head='<div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px">'+
+      '<h3 style="font:400 34px Italiana,Georgia,serif;margin:0">Guest list</h3>'+
+      '<button type="button" class="btn secondary small" id="download-guest-csv">Export CSV ↓</button></div>'+
+      '<p style="font-size:12px;margin:14px 0 24px">'+active.length+' bookings · '+report.paidSeats+' tickets · '+checked+' checked in · $'+(revenue/100).toFixed(2)+' gross</p>'+
+      '<p style="font-size:12px;color:#765d63;margin:0 0 18px">Guests can check in under the purchaser’s name. You only need to count how many of their group have arrived.</p>';
+    const body=active.length?active.map(b=>{
+      const arrived=b.seats.filter(seat=>seat.checkedInAt).length;
+      return '<div class="ms-booking-checkin" data-registration="'+safe(b.registrationId)+'" '+
+        'style="display:grid;grid-template-columns:minmax(0,1fr) auto;gap:16px;align-items:center;padding:19px 0;border-bottom:1px solid #dfcbc5">'+
+        '<div style="min-width:0"><strong style="font-size:15px">'+safe(b.buyerName||"Purchaser name unavailable")+'</strong>'+
+        '<p style="font-size:12px;color:#765d63;margin:6px 0;overflow-wrap:anywhere">'+safe(b.buyerEmail||"No email provided")+'</p>'+
+        '<p style="font-size:12px;margin:6px 0">'+b.quantity+' ticket'+(b.quantity===1?"":"s")+' purchased</p></div>'+
+        '<div style="display:flex;align-items:center;gap:10px;flex-wrap:nowrap">'+
+        '<button type="button" class="btn secondary small ms-check-minus" aria-label="Check out one guest" '+(arrived===0?"disabled":"")+'>−</button>'+
+        '<strong style="font-size:14px;white-space:nowrap">'+arrived+' / '+b.quantity+'</strong>'+
+        '<button type="button" class="btn secondary small ms-check-plus" aria-label="Check in one guest" '+(arrived>=b.quantity?"disabled":"")+'>+</button></div>'+
+        '</div>';
+    }).join(""):'<p>No paid bookings recorded for this event yet.</p>';
+    panel.innerHTML=head+body+'<p style="font-size:11px;color:#806269;margin-top:18px">Square is the source of truth for payment and ticket quantity. Check-in counts can never exceed purchased tickets.</p>';
+    $("download-guest-csv").addEventListener("click",()=>csvDownload(event,report));
+    panel.querySelectorAll(".ms-booking-checkin").forEach(row=>{
+      const booking=active.find(b=>b.registrationId===row.dataset.registration);
+      if(!booking)return;
+      for(const direction of ["plus","minus"]){
+        row.querySelector(".ms-check-"+direction).addEventListener("click",async()=>{
+          const seat=direction==="plus"?
+            booking.seats.find(s=>!s.checkedInAt):
+            [...booking.seats].reverse().find(s=>s.checkedInAt);
+          if(!seat)return;
+          row.querySelectorAll("button").forEach(btn=>btn.disabled=true);
+          try{
+            await window.makeSpaceCloud.request("mutation","guests:setCheckIn",{
+              registrationId:booking.registrationId,seatNumber:seat.seatNumber,checkedIn:direction==="plus"
+            });
+            const fresh=await window.makeSpaceCloud.request("query","guests:listForEvent",{eventId:event.id});
+            renderBookingManager(event,fresh);
+          }catch(err){alert("Check-in could not be saved: "+String(err.message||err).slice(0,160));renderBookingManager(event,report)}
+        });
+      }
+    });
   }
   $("attendees-button").addEventListener("click",async()=>{
     const e=getEvent();if(!e||!window.makeSpaceCloud?.connected)return;
