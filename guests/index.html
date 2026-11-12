@@ -27,7 +27,25 @@ button:disabled{opacity:.55;cursor:not-allowed}
 footer{text-align:center;padding:20px 18px 35px;font-size:10px;color:#8a7176}
 [hidden]{display:none!important}
 @media(max-width:600px){main{padding-top:63px}.panel{padding:24px}}
-</style></head>
+</style><style id="sitewide-footer">
+footer#community{display:block!important;margin:0;background:#501923;color:#f6f0e8;padding:95px 0 30px}
+footer#community .wrap{width:min(1180px,calc(100% - 64px));margin:auto;display:block!important}
+footer#community .footer-top{display:grid;grid-template-columns:1fr 1fr;gap:8vw;align-items:end}
+footer#community .footer-top h2{font:400 clamp(67px,7vw,110px)/.86 "Italiana",Georgia,serif;letter-spacing:-.05em;color:#f6f0e8;margin:18px 0}
+footer#community .signup{display:flex;border-bottom:1px solid #c3a6a2;align-items:center;padding:12px 0;max-width:520px}
+footer#community .signup input{background:transparent;border:0;outline:0;color:#f6f0e8;flex:1;min-width:0;font:400 16px "DM Sans",sans-serif;padding:10px 2px}
+footer#community .signup input::placeholder{color:#bca5a3}
+footer#community .signup button{border:0;background:transparent;color:#f6f0e8;font-size:25px;cursor:pointer;border-radius:999px;padding:8px 14px}
+footer#community .notice{font:400 11px/1.5 "DM Sans",sans-serif;min-height:20px;margin-top:8px;color:#ddbdc2}
+footer#community .footer-bottom{border-top:1px solid #936873;margin-top:110px;padding-top:24px;display:flex;justify-content:space-between;align-items:end;gap:20px}
+footer#community .bigbrand img{display:block;width:245px;height:auto;max-width:100%}
+footer#community .footer-links{display:flex;gap:30px;flex-wrap:wrap;font:400 10px "DM Sans",sans-serif;letter-spacing:.12em;text-transform:uppercase;align-items:center}
+footer#community .footer-links a{color:inherit;text-decoration:none}
+footer#community .footer-links a:hover{text-decoration:underline;text-underline-offset:5px}
+footer#community .tiny{font:400 10px "DM Sans",sans-serif;color:#cba7ad;margin-top:23px}
+@media(max-width:800px){footer#community .wrap{width:calc(100% - 36px)}footer#community .footer-top{grid-template-columns:1fr;gap:30px}footer#community .footer-bottom{margin-top:70px;flex-direction:column;align-items:flex-start;gap:28px}footer#community .footer-links{gap:16px 22px}}
+@media(max-width:520px){footer#community{padding:75px 0 28px}footer#community .footer-top h2{font-size:clamp(55px,12vw,72px)}footer#community .footer-bottom{margin-top:62px}footer#community .bigbrand img{width:175px}footer#community .footer-links a{font-size:9px}}
+</style><style>body{min-height:100vh;display:flex;flex-direction:column}main{width:100%;flex:1}footer#community{flex:none}</style></head>
 <body><header><a href="/" aria-label="MAKE SPACE home"><img src="/assets/makespace-logo.svg" alt="MAKE SPACE"></a></header>
 <main><span class="kicker">MAKE SPACE · GUEST REGISTRATION</span>
 <h1>Your people.<br><em>Our kind of party.</em></h1>
@@ -37,7 +55,7 @@ footer{text-align:center;padding:20px 18px 35px;font-size:10px;color:#8a7176}
 <div id="guest-fields"></div>
 <button type="submit" id="save-button">Save guest names</button>
 </form></div>
-</main><footer>MAKE SPACE · A CREATIVE SOCIAL CLUB · SAN ANTONIO</footer>
+</main><footer id="community"><div class="wrap"><div class="footer-top"><div><h2 class="display">Join the list.</h2></div><div><form class="signup" onsubmit="event.preventDefault();document.getElementById('footer-notice').textContent='Preview only — signups will be connected before launch.'"><input type="email" required aria-label="Email address" placeholder="Your email address"><button type="submit" aria-label="Join the list">↗</button></form><p id="footer-notice" class="notice" aria-live="polite">New events. First dibs.</p></div></div><div class="footer-bottom"><a href="/" class="bigbrand" aria-label="MAKE SPACE home"><img src="/assets/makespace-logo.svg" width="270" height="127" alt="MAKE SPACE"></a><div class="footer-links"><a href="/calendar/">Calendar</a><a href="/#about">About</a><a href="/private-events/">Private events</a><a href="https://www.instagram.com/makespace_______/" target="_blank" rel="noopener">Instagram ↗</a></div></div><div class="tiny">© 2027 MAKE SPACE · SAN ANTONIO, TEXAS</div></div></footer>
 <script>
 (()=>{
 "use strict";
