@@ -162,6 +162,8 @@ export const remove = mutation({
     if (admin.role !== "owner") throw new ConvexError("Owner permission required");
     const event = await ctx.db.get(id);
     if (!event) throw new ConvexError("Event not found");
+    const booked = await ctx.db.query("registrations").withIndex("by_event", q => q.eq("eventId", id)).first();
+    if (booked) throw new ConvexError("This event has payment records and cannot be deleted. Keep it for booking history.");
     // Do not delete stored images automatically: they may be referenced by other records.
     await ctx.db.delete(id);
   },
