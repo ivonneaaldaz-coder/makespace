@@ -17,12 +17,20 @@
   .signup button:hover{transform:translate(3px,-3px)}
   .experience-image,.hero .float,.gallery img,.photo,.event img,.private img,.about img{transition:transform .8s cubic-bezier(.2,.7,.2,1),filter .8s ease}
   .experience-image:hover,.event:hover img{transform:scale(1.012);filter:saturate(1.07)}
-  .ms-reveal{opacity:0;transform:translateY(22px);transition:opacity .85s ease,transform .85s cubic-bezier(.2,.7,.2,1)}
-  .ms-reveal.ms-visible{opacity:1;transform:translateY(0)}
-  .ms-swipe-in{opacity:0;transform:translateX(-42px);transition:opacity .9s ease,transform .9s cubic-bezier(.2,.7,.2,1)}
-  .ms-swipe-in.ms-right{transform:translateX(42px)}
-  .ms-swipe-in.ms-visible{opacity:1;transform:translateX(0)}
+  /* All reveal targets use a real keyframe animation, never a timing-sensitive
+     transition between classes added during the same browser frame. */
+  @keyframes ms-consistent-entrance{
+    from{opacity:0;translate:var(--ms-enter-x,-32px) 0}
+    to{opacity:1;translate:0 0}
+  }
+  .ms-motion-item{opacity:0}
+  .ms-motion-item.ms-motion-visible{
+    animation:ms-consistent-entrance .85s cubic-bezier(.22,1,.36,1) both;
+  }
+  .ms-motion-item.ms-motion-right{--ms-enter-x:32px}
+  .ms-motion-item.ms-motion-left{--ms-enter-x:-32px}
+  .ms-motion-item.ms-motion-up{--ms-enter-x:0px}
 }
 @media(prefers-reduced-motion:reduce){
-  .ms-reveal,.ms-swipe-in{opacity:1!important;transform:none!important;transition:none!important}
+  .ms-motion-item{opacity:1!important;translate:none!important;animation:none!important}
 }
