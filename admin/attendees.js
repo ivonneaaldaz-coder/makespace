@@ -196,13 +196,32 @@
   $("attendees-button").addEventListener("click",async()=>{
     const e=getEvent();if(!e||!window.makeSpaceCloud?.connected)return;
     const panel=$("attendees-panel");panel.hidden=false;
-    panel.textContent="Loading bookings and attendee seats…";
-    guestView="attendees";
+    panel.textContent="Loading paid bookings…";
     try{
-      const report=await loadAttendees(e);
-      latestGuestReport=report;
+      // The previously verified Square query is the primary source for purchasers.
+      const square=await window.makeSpaceCloud.request("query","square:listAttendees",{eventId:e.id});
+      if(getEvent()?.id!==e.id)return;
+      const report={eventTitle:square.eventTitle,capacity:square.capacity,
+        paidSeats:square.seatsSold,isFallback:true,
+        bookings:square.rows.map(r=>({
+          registrationId:r._id,buyerName:r.buyerName,buyerEmail:r.buyerEmail,
+          quantity:r.quantity,amountCents:r.amountCents,status:r.status,
+          squarePaymentId:r.squarePaymentId,
+          seats:Array.from({length:r.quantity},(_,i)=>({seatNumber:i+1,name:"",checkedInAt:null}))
+        }))};
       renderBookingManager(e,report);
-    }catch(err){panel.innerHTML="<p role=\"alert\">Could not load guest list: "+safe(String(err.message||err).slice(0,200))+"</p><button type=\"button\" class=\"btn secondary small\" id=\"retry-attendees\">Retry</button>";$("retry-attendees").onclick=()=>$("attendees-button").click()}
+      // If the optional check-in query fails, retain the verified purchaser list.
+      try{
+        const complete=await Promise.race([
+          window.makeSpaceCloud.request("query","guests:listForEvent",{eventId:e.id}),
+          new Promise((_,reject)=>setTimeout(()=>reject(Error("Check-in timed out")),7000))
+        ]);
+        if(getEvent()?.id===e.id&&document.querySelector('#ms-tab-attendees[aria-selected="true"]'))renderBookingManager(e,complete);
+      }catch{/* Purchaser list remains visible. */}
+    }catch(err){
+      panel.innerHTML='<p role="alert">Could not load paid bookings: '+safe(String(err.message||err).slice(0,200))+'</p><button type="button" class="btn secondary small" id="retry-attendees">Retry</button>';
+      $("retry-attendees").onclick=()=>$("attendees-button").click();
+    }
   });
   reset();
 })();
