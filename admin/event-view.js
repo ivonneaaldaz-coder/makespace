@@ -12,6 +12,9 @@ card.style.cssText="padding:clamp(22px,3vw,42px);margin:0;min-width:0";
 form.insertAdjacentElement("afterend",card);
 const style=document.createElement("style");
 style.textContent=`
+#editor-view .editorbody[hidden],#editor-view .ms-workspace-tabs[hidden],#editor-view #attendees-panel[hidden]{display:none!important}
+#editor-view.ms-view-only .editorbody,#editor-view.ms-view-only .ms-workspace-tabs,#editor-view.ms-view-only #attendees-panel{display:none!important}
+#editor-view:not(.ms-view-only) #ms-readonly-view{display:none!important}
 #ms-readonly-view[hidden]{display:none!important}
 #ms-readonly-view .ms-overview-kicker{font:700 10px "DM Sans",sans-serif;letter-spacing:.14em;color:#795b63;text-transform:uppercase}
 #ms-readonly-view h3{font:400 clamp(32px,4vw,48px)/1.05 "Italiana",Georgia,serif;color:#501923;letter-spacing:-.035em;margin:12px 0 10px}
@@ -31,6 +34,7 @@ function showReadOnly(){
  if(!e)return;
  window.makeSpaceResetWorkspace?.();
  editor.classList.remove("ms-attendees-active");
+ editor.classList.add("ms-view-only");
  tabs&&(tabs.hidden=true);
  form.hidden=true;
  guestPanel&&(guestPanel.hidden=true);
@@ -53,6 +57,7 @@ function showReadOnly(){
 window.makeSpaceShowReadOnly=showReadOnly;
 
 window.makeSpaceHideReadOnly=()=>{
+  editor.classList.remove("ms-view-only");
   card.hidden=true;
   tabs&&(tabs.hidden=false);
   form.hidden=editor.classList.contains("ms-attendees-active");
