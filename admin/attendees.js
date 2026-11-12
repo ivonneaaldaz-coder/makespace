@@ -6,7 +6,7 @@
   const controls=$("checkout")?.closest(".group");
   if(!controls)return;
   controls.insertAdjacentHTML("beforeend",'<div style="display:flex;gap:9px;align-items:center;flex-wrap:wrap;margin-top:10px"><button type="button" class="btn secondary small" id="verify-square">Verify with Square ↗</button><span id="square-verify-status" style="color:#806c71;font-size:11px">Link verification required for automated attendee tracking</span></div>');
-  $("duplicate").insertAdjacentHTML("beforebegin",'<button type="button" class="btn secondary small" id="attendees-button">Attendees</button>');
+  $("editor-view").insertAdjacentHTML("beforeend",'<button type="button" id="attendees-button" hidden style="display:none" tabindex="-1">Load attendees</button>');
   $("editor-view").insertAdjacentHTML("beforeend",'<section id="attendees-panel" class="surface" hidden style="padding:24px;margin:20px 0;min-width:0"></section>');
   let trackingUrl="";
   controls.insertAdjacentHTML("beforeend", '<div id="square-catalog-picker" hidden style="margin-top:12px"><label for="square-ticket" style="font-size:11px;font-weight:700;display:block;margin-bottom:6px">MATCH SQUARE CATALOG TICKET</label><select id="square-ticket" style="width:100%;padding:12px;background:#fff;border:1px solid #decfc8;border-radius:9px"><option value="">Choose the exact ticket used by this payment link</option></select><p style="font-size:11px;color:#806c71">Dashboard payment links cannot be inspected through Square’s API. Select the item used in that link and double-check its name and price.</p></div>');
@@ -17,8 +17,8 @@
     window.makeSpaceSquareVariation=e?.squareVariationId||"";
     $("square-verify-status").textContent=window.makeSpaceSquareVariation?"Square ticket mapping saved":"Not verified for automatic attendee tracking";
     $("square-catalog-picker").hidden=true;
-    $("attendees-panel").hidden=true;
-    $("attendees-button").hidden=!e;
+    if(document.querySelector("#ms-tab-attendees[aria-selected=\"true\"]")===null)$("attendees-panel").hidden=true;
+    $("attendees-button").hidden=true;
   };
   for(const id of ["rows","calgrid","add","cal-add"]){
     const el=$(id);
