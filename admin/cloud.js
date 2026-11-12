@@ -122,9 +122,9 @@ async function saveEvent(e) {
       duration: data.duration, venue: data.venue,
       priceCents: Math.round(data.price * 100), capacity: data.capacity,
       description: data.description, featured: data.featured, notes: data.notes,
-      ...(imageStorageId ? { imageStorageId } : {}),
-      // Existing external artwork remains until explicitly removed or replaced by an upload.
-      ...(!artworkRemoved && !imageData && prior?.image && !imageStorageId ? {imageExternalUrl:prior.image} : {}),
+      imageStorageId,
+      // Explicit undefined clears a removed/replaced legacy image on existing events.
+      imageExternalUrl: !artworkRemoved && !imageData && !imageStorageId ? prior?.image || undefined : undefined,
       checkoutUrl: data.checkout || "",
       ...(data.checkout && window.makeSpaceSquareVariation ? { squareVariationId:window.makeSpaceSquareVariation } : {})
     };
