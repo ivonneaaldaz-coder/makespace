@@ -156,7 +156,7 @@
           allowedCheckout(e.checkoutUrl) ?
           '<a class="booking square-checkout" href="'+escape(allowedCheckout(e.checkoutUrl))+
             '" target="_blank" rel="noopener noreferrer">Reserve your spot ↗</a>'+
-          '<small>Updated from confirmed bookings. Final availability is determined at Square checkout.</small>' :
+          '' :
           '<p class="booking">Registration opening soon</p>'+
           '<small>Check back for the ticket link.</small>')+
         '</aside></div>';
