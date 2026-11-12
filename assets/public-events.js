@@ -70,6 +70,13 @@
     if(/^(?:[0-9]|1[01])$/.test(saved.get("month")||""))month=Number(saved.get("month"));
     function render() {
       $("monthtitle").textContent=monthNames[month]+" "+year;
+      if($("jump-month")){
+        $("jump-month").innerHTML=monthNames.map((name,i)=>'<option value="'+i+'" '+(i===month?'selected':'')+'>'+name+'</option>').join("");
+      }
+      if($("jump-year")){
+        const years=[...new Set([2026,2027,2028,year,...events.map(e=>Number(e.date.slice(0,4))).filter(Number.isFinite)])].sort((a,b)=>a-b);
+        $("jump-year").innerHTML=years.map(y=>'<option value="'+y+'" '+(y===year?'selected':'')+'>'+y+'</option>').join("");
+      }
       $("monthnav").innerHTML=monthNames.map((n,i)=>
         '<button type="button" data-month="'+i+'" class="'+(i===month?"active":"")+
         '">'+n.slice(0,3).toUpperCase()+'</button>').join("");
@@ -96,6 +103,8 @@
       const u=new URL(location.href);u.searchParams.set("year",year);u.searchParams.set("month",month);
       history.replaceState(null,"",u);
     }
+    $("jump-month")?.addEventListener("change",e=>{month=Number(e.target.value);render()});
+    $("jump-year")?.addEventListener("change",e=>{year=Number(e.target.value);render()});
     $("monthnav").addEventListener("click",e=>{
       const b=e.target.closest("[data-month]");if(!b)return;month=Number(b.dataset.month);render();
     });
