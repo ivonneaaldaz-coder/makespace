@@ -58,7 +58,7 @@ window.makeSpaceShowReadOnly=showReadOnly;
 window.makeSpaceEnterEditMode=()=>{
  editor.classList.remove("ms-view-only","ms-attendees-active");
  card.hidden=true;
- tabs&&(tabs.hidden=!!editing);
+ tabs&&(tabs.hidden=true); // Editing is its own view; a new event has no attendees yet.
  form.hidden=false;
  guestPanel&&(guestPanel.hidden=true);
  $("editor-title").textContent=editing?"Edit experience":"New experience";
