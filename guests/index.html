@@ -1,0 +1,95 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="robots" content="noindex,nofollow,noarchive"><meta name="referrer" content="no-referrer">
+<title>Register your guests — MAKE SPACE</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Italiana&display=swap" rel="stylesheet">
+<style>
+:root{--wine:#501923;--paper:#f5eee4;--ink:#342327}*{box-sizing:border-box}
+body{margin:0;background:var(--paper);color:var(--ink);font-family:"DM Sans",sans-serif}
+header{background:var(--wine);padding:25px max(25px,calc((100vw - 1080px)/2))}
+header img{width:106px;height:auto;display:block}
+main{max-width:660px;margin:0 auto;padding:80px 22px 100px}
+.kicker{font-size:10px;letter-spacing:.17em;text-transform:uppercase;font-weight:700;color:#86535e}
+h1{font:normal clamp(50px,9vw,80px)/.98 Italiana,Georgia,serif;letter-spacing:-.035em;color:var(--wine);margin:14px 0 18px}
+p{line-height:1.65}
+.intro{max-width:480px;font-size:15px}
+.panel{background:#fffaf5;border:1px solid #ddccc7;padding:32px;margin-top:36px}
+.event{font:normal 29px Italiana,Georgia,serif;color:var(--wine);margin:0 0 7px}
+.meta{font-size:12px;color:#765c62;margin-bottom:30px}
+.field{display:grid;gap:9px;margin:17px 0}
+.field label{font-size:11px;font-weight:700;letter-spacing:.04em}
+.field input{border:1px solid #cfbcb8;background:#fff;font:inherit;padding:14px;width:100%;border-radius:0}
+button{background:var(--wine);color:white;border:1px solid var(--wine);border-radius:999px;padding:14px 27px;font:700 11px "DM Sans",sans-serif;text-transform:uppercase;letter-spacing:.1em;cursor:pointer;margin-top:16px}
+button:disabled{opacity:.55;cursor:not-allowed}
+#status{min-height:24px;font-size:13px;line-height:1.6}
+footer{text-align:center;padding:20px 18px 35px;font-size:10px;color:#8a7176}
+[hidden]{display:none!important}
+@media(max-width:600px){main{padding-top:63px}.panel{padding:24px}}
+</style></head>
+<body><header><a href="/" aria-label="MAKE SPACE home"><img src="/assets/makespace-logo.svg" alt="MAKE SPACE"></a></header>
+<main><span class="kicker">MAKE SPACE · GUEST REGISTRATION</span>
+<h1>Your people.<br><em>Our kind of party.</em></h1>
+<p class="intro">Someone saved a spot for you! Add the names of everyone coming along so we can welcome your group.</p>
+<div class="panel"><p id="status" aria-live="polite">Opening your private guest list…</p>
+<form id="guest-form" hidden><h2 class="event" id="event-title"></h2><p class="meta" id="event-meta"></p>
+<div id="guest-fields"></div>
+<button type="submit" id="save-button">Save guest names</button>
+</form></div>
+</main><footer>MAKE SPACE · A CREATIVE SOCIAL CLUB · SAN ANTONIO</footer>
+<script>
+(()=>{
+"use strict";
+const CLOUD="https://deafening-clam-741.convex.cloud";
+const $=id=>document.getElementById(id);
+const token=location.hash.replace(/^#/,"");
+history.replaceState(null,"",location.pathname);
+async function request(kind,path,args){
+  const r=await fetch(CLOUD+"/api/"+kind,{method:"POST",headers:{"Content-Type":"application/json"},
+    body:JSON.stringify({path,args,format:"json"}),cache:"no-store"});
+  const json=await r.json();
+  if(!r.ok||json.status!=="success")throw Error(json.errorMessage||json.message||"Could not load guest registration");
+  return json.value;
+}
+async function hashToken(value){
+  if(!/^[a-f0-9]{64}$/.test(value))throw Error("This guest link isn't valid.");
+  const hash=await crypto.subtle.digest("SHA-256",new TextEncoder().encode(value));
+  return Array.from(new Uint8Array(hash),b=>b.toString(16).padStart(2,"0")).join("");
+}
+let hash;
+async function init(){
+ try{
+  hash=await hashToken(token);
+  const d=await request("query","guests:guestForm",{hash});
+  if(!d)throw Error("This guest link has expired. Please ask your host for a new link.");
+  $("event-title").textContent=d.eventTitle;
+  $("event-meta").textContent=d.eventDate+" · "+d.eventTime+" Central · "+d.quantity+" reserved seat"+(d.quantity===1?"":"s");
+  const inputs=$("guest-fields");
+  for(const seat of d.seats){
+    const wrap=document.createElement("div"),label=document.createElement("label"),input=document.createElement("input");
+    wrap.className="field";
+    label.textContent="Guest "+seat.seatNumber+" — first and last name";
+    input.type="text";input.maxLength=100;input.required=true;input.name="guest";
+    input.autocomplete="off";input.placeholder="First and last name";input.value=seat.name||"";
+    label.appendChild(input);wrap.appendChild(label);inputs.appendChild(wrap);
+  }
+  $("status").textContent="Names can be updated until your event. This form does not charge your card or change the number of seats purchased.";
+  $("guest-form").hidden=false;
+ }catch(e){$("status").textContent=String(e.message||e)}
+}
+$("guest-form").addEventListener("submit",async event=>{
+ event.preventDefault();
+ if(!$("guest-form").reportValidity())return;
+ const names=[...document.querySelectorAll('input[name="guest"]')].map(i=>i.value.trim());
+ const button=$("save-button");button.disabled=true;button.textContent="Saving…";
+ try{
+   await request("mutation","guests:submitGuestNames",{hash,names});
+   $("status").textContent="Saved! Your guest names are on the list. See you soon.";
+   button.textContent="Saved";
+ }catch(e){$("status").textContent="Could not save: "+String(e.message||e).slice(0,160);button.textContent="Try again";}
+ finally{button.disabled=false}
+});
+init();
+})();
+</script></body></html>
