@@ -141,9 +141,9 @@ async function removeEvent() {
     await loadEvents(); toast("Event deleted");
   } catch (err) { toast(errorMessage(err)); }
 }
-async function duplicateEvent() {
-  if (!ready || !editing) return;
-  const e = events.find(x => x.id === editing);
+async function duplicateEvent(sourceId = editing) {
+  if (!ready || !sourceId) return;
+  const e = events.find(x => x.id === sourceId);
   if (!e) return;
   try {
     await call("mutation", "events:upsert", { event: {
