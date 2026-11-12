@@ -25,6 +25,11 @@ const eventFields = {
   checkoutUrl: v.optional(v.string()),
   squareVariationId: v.optional(v.string()),
   featured: v.boolean(),
+  historical: v.optional(v.boolean()),
+  ticketsSold: v.optional(v.number()),
+  attendeesActual: v.optional(v.number()),
+  actualRevenueCents: v.optional(v.number()),
+  expensesCents: v.optional(v.number()),
   notes: v.string(),
 };
 
@@ -32,6 +37,7 @@ function validateEvent(e: {
   title: string; slug: string; date: string; time: string;
   duration: number; priceCents: number; capacity: number;
   timezone: string; imageExternalUrl?: string; checkoutUrl?: string;
+  historical?: boolean; ticketsSold?: number; attendeesActual?: number; actualRevenueCents?: number; expensesCents?: number;
 }) {
   if (!e.title.trim() || e.title.length > 120) throw new ConvexError("Invalid title");
   if (!/^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(e.slug)) throw new ConvexError("Invalid slug");
@@ -45,6 +51,10 @@ function validateEvent(e: {
   if (!Number.isInteger(e.capacity) || e.capacity < 1 || e.capacity > 10000) throw new ConvexError("Invalid capacity");
   if (!Number.isInteger(e.priceCents) || e.priceCents < 0) throw new ConvexError("Invalid ticket price");
   if (!Number.isInteger(e.duration) || e.duration < 15 || e.duration > 1440) throw new ConvexError("Invalid duration");
+  for(const n of [e.ticketsSold,e.attendeesActual,e.actualRevenueCents,e.expensesCents]){
+    if(n !== undefined && (!Number.isSafeInteger(n) || n < 0))throw new ConvexError("Event financial values must be nonnegative whole numbers");
+  }
+  if(e.historical && e.checkoutUrl)throw new ConvexError("Historical events cannot use Square checkout");
   for (const url of [e.imageExternalUrl, e.checkoutUrl]) {
     if (url) {
       try { if (new URL(url).protocol !== "https:") throw Error(); }
@@ -99,7 +109,7 @@ export const listPublic = query({
       .withIndex("by_status_date", q => q.eq("status", "published")).collect();
     const soldOut = await ctx.db.query("events")
       .withIndex("by_status_date", q => q.eq("status", "sold_out")).collect();
-    const all = [...published, ...soldOut].sort((a,b) => a.date.localeCompare(b.date));
+    const all = [...published, ...soldOut].filter(e=>!e.historical).sort((a,b) => a.date.localeCompare(b.date));
     return await Promise.all(all.map(e => publicEvent(ctx, e)));
   },
 });
@@ -109,7 +119,7 @@ export const getPublicBySlug = query({
   handler: async (ctx, args) => {
     const event = await ctx.db.query("events")
       .withIndex("by_slug", q => q.eq("slug", args.slug)).unique();
-    return event && event.status !== "draft" ? publicEvent(ctx, event) : null;
+    return event && event.status !== "draft" && !event.historical ? publicEvent(ctx, event) : null;
   },
 });
 
@@ -120,7 +130,7 @@ export const availability = query({
   args: { slug: v.string() },
   handler: async (ctx,{slug}) => {
     const event=await ctx.db.query("events").withIndex("by_slug",q=>q.eq("slug",slug)).unique();
-    if(!event||event.status==="draft")return null;
+    if(!event||event.status==="draft"||event.historical)return null;
     const paid=await ctx.db.query("registrations").withIndex("by_event",q=>q.eq("eventId",event._id)).collect();
     const sold=paid.filter(r=>r.status==="paid").reduce((n,r)=>n+r.quantity,0);
     return {capacity:event.capacity,sold,remaining:Math.max(0,event.capacity-sold),status:event.status};
@@ -135,11 +145,38 @@ export const listAdmin = query({
   },
 });
 
+/** Admin-only event performance. Historical totals are manually recorded; Square totals
+ * come from verified, non-refunded payment registrations, never the ticket-price estimate.
+ */
+export const performance = query({
+  args:{},
+  handler:async(ctx)=>{
+    await requireAdmin(ctx);
+    const entries=await ctx.db.query("events").collect();
+    const rows=await Promise.all(entries.map(async(e)=>{
+      const transactions=e.historical?[]:await ctx.db.query("registrations")
+        .withIndex("by_event",q=>q.eq("eventId",e._id)).collect();
+      const paid=transactions.filter(t=>t.status==="paid");
+      const tickets=e.historical?(e.ticketsSold??0):paid.reduce((n,t)=>n+t.quantity,0);
+      const revenueCents=e.historical?(e.actualRevenueCents??tickets*e.priceCents):
+        paid.reduce((n,t)=>n+t.amountCents,0);
+      const expensesCents=e.expensesCents??0;
+      const attendees=e.historical?(e.attendeesActual??tickets):null;
+      return {id:e._id,title:e.title,date:e.date,venue:e.venue,
+        historical:!!e.historical,tickets,attendees,priceCents:e.priceCents,
+        revenueCents,expensesCents,profitCents:revenueCents-expensesCents,
+        hasFinancialData:!!e.historical||paid.length>0||expensesCents>0};
+    }));
+    return rows;
+  }
+});
+
 export const upsert = mutation({
   args: { id: v.optional(v.id("events")), event: v.object(eventFields) },
   handler: async (ctx, { id, event }) => {
     await requireAdmin(ctx);
     validateEvent(event);
+    if(event.historical){ event.featured=false; event.status="draft"; event.checkoutUrl=undefined; event.squareVariationId=undefined; }
     if (event.checkoutUrl && !safeSquareCheckoutUrl(event.checkoutUrl)) {
       throw new ConvexError("Use a Square payment link from square.link or checkout.square.site");
     }
