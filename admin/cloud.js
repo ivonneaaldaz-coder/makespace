@@ -129,9 +129,9 @@ async function saveEvent(e) {
     await call("mutation", "events:upsert", { ...(editing ? {id: editing} : {}), event: formEvent });
     imageData = "";
     await loadEvents();
-    toast("Saved securely to Convex");
+    toast("Saved");
   } catch (err) { toast("Not saved: " + errorMessage(err)); }
-  finally { submitButton.disabled = false; submitButton.textContent = "Save to cloud"; }
+  finally { submitButton.disabled = false; submitButton.textContent = "Save"; }
 }
 async function removeEvent() {
   if (!ready || !editing) return;
