@@ -34,6 +34,11 @@ export default defineSchema({
     checkoutUrl: v.optional(v.string()),
     squareVariationId: v.optional(v.string()),
     featured: v.boolean(),
+    historical: v.optional(v.boolean()), // admin-only historical event; never shown publicly
+    ticketsSold: v.optional(v.number()),
+    attendeesActual: v.optional(v.number()),
+    actualRevenueCents: v.optional(v.number()), // overrides ticketsSold * price
+    expensesCents: v.optional(v.number()), // cost of hosting the event
     notes: v.string(), // admin-only; NEVER return from public queries
     updatedAt: v.number(),
   })
