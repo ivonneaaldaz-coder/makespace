@@ -45,7 +45,12 @@ footer#community .footer-links a:hover{text-decoration:underline;text-underline-
 footer#community .tiny{font:400 10px "DM Sans",sans-serif;color:#cba7ad;margin-top:23px}
 @media(max-width:800px){footer#community .wrap{width:calc(100% - 36px)}footer#community .footer-top{grid-template-columns:1fr;gap:30px}footer#community .footer-bottom{margin-top:70px;flex-direction:column;align-items:flex-start;gap:28px}footer#community .footer-links{gap:16px 22px}}
 @media(max-width:520px){footer#community{padding:75px 0 28px}footer#community .footer-top h2{font-size:clamp(55px,12vw,72px)}footer#community .footer-bottom{margin-top:62px}footer#community .bigbrand img{width:175px}footer#community .footer-links a{font-size:9px}}
-</style><style>body{min-height:100vh;display:flex;flex-direction:column}main{width:100%;flex:1}footer#community{flex:none}</style></head>
+</style><style>body{min-height:100vh;display:flex;flex-direction:column}main{width:100%;flex:1}footer#community{flex:none}</style><style id="footer-brand-alignment">
+footer#community .bigbrand img,footer .footer-bottom .bigbrand img{width:112px!important;height:auto!important;max-width:100%}
+@media(max-width:800px){footer#community .bigbrand img,footer .footer-bottom .bigbrand img{width:99px!important}}
+@media(max-width:520px){footer#community .bigbrand img,footer .footer-bottom .bigbrand img{width:90px!important}}
+footer#community .footer-bottom,footer .footer-bottom{align-items:center}
+</style></head>
 <body><header><a href="/" aria-label="MAKE SPACE home"><img src="/assets/makespace-logo.svg" alt="MAKE SPACE"></a></header>
 <main><span class="kicker">MAKE SPACE · GUEST REGISTRATION</span>
 <h1>Your people.<br><em>Our kind of party.</em></h1>
@@ -55,7 +60,7 @@ footer#community .tiny{font:400 10px "DM Sans",sans-serif;color:#cba7ad;margin-t
 <div id="guest-fields"></div>
 <button type="submit" id="save-button">Save guest names</button>
 </form></div>
-</main><footer id="community"><div class="wrap"><div class="footer-top"><div><h2 class="display">Join the list.</h2></div><div><form class="signup" onsubmit="event.preventDefault();document.getElementById('footer-notice').textContent='Preview only — signups will be connected before launch.'"><input type="email" required aria-label="Email address" placeholder="Your email address"><button type="submit" aria-label="Join the list">↗</button></form><p id="footer-notice" class="notice" aria-live="polite">New events. First dibs.</p></div></div><div class="footer-bottom"><a href="/" class="bigbrand" aria-label="MAKE SPACE home"><img src="/assets/makespace-logo.svg" width="270" height="127" alt="MAKE SPACE"></a><div class="footer-links"><a href="/calendar/">Calendar</a><a href="/#about">About</a><a href="/private-events/">Private events</a><a href="https://www.instagram.com/makespace______" target="_blank" rel="noopener">Instagram ↗</a><a href="https://www.tiktok.com/@makespace______" target="_blank" rel="noopener noreferrer">TikTok ↗</a></div></div><div class="tiny">© 2027 MAKE SPACE · SAN ANTONIO, TEXAS</div></div></footer>
+</main><footer id="community"><div class="wrap"><div class="footer-top"><div><h2 class="display">Join the list.</h2></div><div><form class="signup" onsubmit="event.preventDefault();document.getElementById('footer-notice').textContent='Preview only — signups will be connected before launch.'"><input type="email" required aria-label="Email address" placeholder="Your email address"><button type="submit" aria-label="Join the list">↗</button></form><p id="footer-notice" class="notice" aria-live="polite">New events. First dibs.</p></div></div><div class="footer-bottom"><a href="/" class="bigbrand" aria-label="MAKE SPACE home"><img src="/assets/makespace-logo.svg" width="270" height="127" alt="MAKE SPACE"></a><div class="footer-links"><a href="/calendar/">Calendar</a><a href="/#about">About</a><a href="/private-events/">Private events</a><a href="https://www.instagram.com/makespace______" target="_blank" rel="noopener">Instagram ↗</a><a href="https://www.tiktok.com/@makespace______" target="_blank" rel="noopener noreferrer">TikTok ↗</a></div></div></div></footer>
 <script>
 (()=>{
 "use strict";
