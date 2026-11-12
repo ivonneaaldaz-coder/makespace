@@ -1,9 +1,9 @@
 /* MAKE SPACE — restrained motion. Reduced-motion preferences always win. */
 @media (prefers-reduced-motion: no-preference){
-  a.backlink,a.link,a.underlink,.footer-links a,nav a:not(.button),.navlinks a:not(.button),.footer-bottom a:not(.bigbrand),.tiny a{
+  a.backlink,a.link,a.underlink,a.textlink,.footer-links a,nav a:not(.button),.navlinks a:not(.button),.footer-bottom a:not(.bigbrand),.tiny a{
     text-decoration:none;transition:color .25s ease,opacity .25s ease,transform .3s cubic-bezier(.2,.75,.25,1);
   }
-  a.backlink:hover,a.link:hover,a.underlink:hover{transform:translateX(5px)}
+  a.backlink:hover,a.link:hover,a.underlink:hover,a.textlink:hover{transform:translateX(5px)}
   .footer-links a{display:inline-block}
   .footer-links a:hover,.footer-bottom a:not(.bigbrand):hover{transform:translateY(-3px);opacity:.75}
   .footer-links a:focus-visible,nav a:focus-visible,.monthnav button:focus-visible,.control:focus-visible{
