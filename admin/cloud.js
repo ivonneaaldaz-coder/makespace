@@ -111,7 +111,8 @@ async function saveEvent(e) {
   submitButton.disabled = true;
   submitButton.textContent = "Saving…";
   try {
-    const imageStorageId = imageData ? await upload(imageData) : prior?.imageStorageId || undefined;
+    const artworkRemoved=!!window.makeSpaceArtworkRemoved;
+    const imageStorageId = imageData ? await upload(imageData) : artworkRemoved ? undefined : prior?.imageStorageId || undefined;
     const formEvent = {
       title: data.title, slug,
       category: data.category === "Ceramics" || data.category === "Social" ||
@@ -122,12 +123,14 @@ async function saveEvent(e) {
       priceCents: Math.round(data.price * 100), capacity: data.capacity,
       description: data.description, featured: data.featured, notes: data.notes,
       ...(imageStorageId ? { imageStorageId } : {}),
-      ...(data.image ? { imageExternalUrl: data.image } : {}),
+      // Existing external artwork remains until explicitly removed or replaced by an upload.
+      ...(!artworkRemoved && !imageData && prior?.image && !imageStorageId ? {imageExternalUrl:prior.image} : {}),
       checkoutUrl: data.checkout || "",
       ...(data.checkout && window.makeSpaceSquareVariation ? { squareVariationId:window.makeSpaceSquareVariation } : {})
     };
     await call("mutation", "events:upsert", { ...(editing ? {id: editing} : {}), event: formEvent });
     imageData = "";
+    window.makeSpaceArtworkRemoved=false;
     await loadEvents();
     toast("Saved");
   } catch (err) { toast("Not saved: " + errorMessage(err)); }
