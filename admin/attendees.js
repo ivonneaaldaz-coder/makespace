@@ -8,64 +8,93 @@
   controls.insertAdjacentHTML("beforeend",'<div style="display:flex;gap:9px;align-items:center;flex-wrap:wrap;margin-top:10px"><button type="button" class="btn secondary small" id="verify-square">Link ticket</button><span id="square-verify-status" style="color:#806c71;font-size:11px">Link a ticket to track bookings automatically</span></div>');
   $("editor-view").insertAdjacentHTML("beforeend",'<button type="button" id="attendees-button" hidden style="display:none" tabindex="-1">Load attendees</button>');
   $("editor-view").insertAdjacentHTML("beforeend",'<section id="attendees-panel" class="surface" hidden style="padding:24px;margin:20px 0;min-width:0"></section>');
-  let trackingUrl="";
-  controls.insertAdjacentHTML("beforeend", '<div id="square-catalog-picker" hidden style="margin-top:12px"><label for="square-ticket" style="font-size:11px;font-weight:700;display:block;margin-bottom:6px">SELECT THE TICKET</label><select id="square-ticket" style="width:100%;padding:12px;background:#fff;border:1px solid #decfc8;border-radius:9px"><option value="">Select the ticket for this event</option></select><p style="font-size:11px;color:#806c71">Choose the matching Square ticket and price.</p></div>');
+  let savedVariation="",savedCheckout="",requestNumber=0;
+  const picker=$("square-catalog-picker");
+  picker.insertAdjacentHTML("beforeend",'<button type="button" class="btn secondary small" id="square-ticket-cancel" style="margin-top:10px">Cancel</button>');
+  const status=$("square-verify-status"),button=$("verify-square");
   const getEvent=()=>typeof editing==="string"?events.find(e=>e.id===editing):null;
-  const reset=()=>{
-    const e=getEvent();
-    trackingUrl=e?.checkout||"";
-    window.makeSpaceSquareVariation=e?.squareVariationId||"";
-    $("square-verify-status").textContent=window.makeSpaceSquareVariation?"Ticket linked · bookings sync automatically":"Link a ticket to track bookings";
-    $("verify-square").textContent=window.makeSpaceSquareVariation?"Change ticket":"Link ticket";
-    $("square-catalog-picker").hidden=true;
-    if(document.querySelector("#ms-tab-attendees[aria-selected=\"true\"]")===null)$("attendees-panel").hidden=true;
-    $("attendees-button").hidden=true;
+  const describe=async(variationId,number)=>{
+    try{
+      const ticket=await window.makeSpaceCloud.request("action","square:describeTicket",{variationId});
+      if(number!==requestNumber||getEvent()?.squareVariationId!==variationId)return;
+      status.textContent=ticket
+        ?"Linked to: "+ticket.name+(ticket.priceCents===null?"":" · $"+(ticket.priceCents/100).toFixed(2))
+        :"Ticket linked · details unavailable in Square";
+    }catch{
+      if(number===requestNumber)status.textContent="Ticket linked · details unavailable";
+    }
   };
-  for(const id of ["rows","calgrid","add","cal-add"]){
-    const el=$(id);
-    el?.addEventListener("click",()=>setTimeout(reset,0));
+  function reset(){
+    requestNumber++;
+    const event=getEvent();
+    savedCheckout=event?.checkout||"";
+    savedVariation=event?.squareVariationId||"";
+    window.makeSpaceSquareVariation=savedVariation;
+    picker.hidden=true;
+    button.textContent=savedVariation?"Change ticket":"Link ticket";
+    status.textContent=savedVariation?"Loading linked ticket…":"No ticket linked";
+    if(savedVariation&&window.makeSpaceCloud?.connected)void describe(savedVariation,requestNumber);
+    if(document.querySelector('#ms-tab-attendees[aria-selected="true"]')===null)$("attendees-panel").hidden=true;
+    $("attendees-button").hidden=true;
   }
-  document.querySelectorAll('.side-link').forEach(b=>b.addEventListener("click",()=>setTimeout(reset,0)));
+  for(const id of ["rows","calgrid","add","cal-add"]){
+    $(id)?.addEventListener("click",()=>setTimeout(reset,0));
+  }
+  document.querySelectorAll(".side-link").forEach(item=>item.addEventListener("click",()=>setTimeout(reset,0)));
   $("checkout").addEventListener("input",()=>{
+    requestNumber++;
     window.makeSpaceSquareVariation="";
-    $("square-catalog-picker").hidden=true;
-    $("square-verify-status").textContent="Payment link changed · link the ticket again";
+    picker.hidden=true;
+    button.textContent="Link ticket";
+    status.textContent="Payment link changed · link the ticket again";
   });
-  $("verify-square").addEventListener("click",async()=>{
+  function cancelChange(){
+    requestNumber++;
+    $("checkout").value=savedCheckout;
+    window.makeSpaceSquareVariation=savedVariation;
+    picker.hidden=true;
+    button.textContent=savedVariation?"Change ticket":"Link ticket";
+    status.textContent=savedVariation?"Loading linked ticket…":"No ticket linked";
+    if(savedVariation&&window.makeSpaceCloud?.connected)void describe(savedVariation,requestNumber);
+  }
+  $("square-ticket-cancel").addEventListener("click",cancelChange);
+  button.addEventListener("click",async()=>{
     if(!window.makeSpaceCloud?.connected)return;
     const url=$("checkout").value.trim();
-    if(!url){$("square-verify-status").textContent="Add your Square payment link first";return;}
-    const btn=$("verify-square");btn.disabled=true;btn.textContent="Loading tickets…";
+    if(!url){status.textContent="Add your Square payment link first";return;}
+    const thisRequest=++requestNumber;
+    button.disabled=true;button.textContent="Loading tickets…";
     try{
-      const match=await window.makeSpaceCloud.request("action","square:inspectLink",{url});
-      trackingUrl=url;
-      if(match.mode==="catalog"){
-        window.makeSpaceSquareVariation="";
-        const options=(match.tickets||[]).filter(t=>t.currency==="USD");
+      const result=await window.makeSpaceCloud.request("action","square:inspectLink",{url});
+      if(thisRequest!==requestNumber)return;
+      if(result.mode==="catalog"){
+        const options=(result.tickets||[]).filter(ticket=>ticket.currency==="USD");
         $("square-ticket").innerHTML='<option value="">Select the ticket for this event</option>'+
-          options.map(t=>'<option value="'+safe(t.variationId)+'">'+safe(t.name)+
-            (t.priceCents===null?"":" · $"+(t.priceCents/100).toFixed(2))+'</option>').join("");
-        $("square-catalog-picker").hidden=false;
-        $("square-verify-status").textContent=options.length?
-          "Choose your ticket below.":
-          "No tickets found in Square. Check your account.";
+          options.map(ticket=>'<option value="'+safe(ticket.variationId)+'">'+safe(ticket.name)+
+            (ticket.priceCents===null?"":" · $"+(ticket.priceCents/100).toFixed(2))+'</option>').join("");
+        const current=window.makeSpaceSquareVariation;
+        $("square-ticket").value=options.some(ticket=>ticket.variationId===current)?current:"";
+        picker.hidden=false;
+        status.textContent=options.length?"Select a ticket, then save. Or cancel to keep the existing one.":"No Square tickets found.";
       }else{
-        $("square-catalog-picker").hidden=true;
-        window.makeSpaceSquareVariation=match.variationId;
-        $("square-verify-status").textContent="Ticket matched: "+match.itemName+". Click Save.";
+        window.makeSpaceSquareVariation=result.variationId;
+        picker.hidden=false;
+        $("square-ticket").innerHTML='<option value="'+safe(result.variationId)+'">'+safe(result.itemName)+'</option>';
+        $("square-ticket").value=result.variationId;
+        status.textContent="Ticket selected · click Save to finish";
       }
     }catch(err){
-      window.makeSpaceSquareVariation="";
-      $("square-verify-status").textContent=String(err.message||err).slice(0,150);
-    }finally{btn.disabled=false;btn.textContent=window.makeSpaceSquareVariation?"Change ticket":"Link ticket";}
+      if(thisRequest===requestNumber)status.textContent=String(err.message||err).slice(0,150);
+    }finally{
+      button.disabled=false;
+      button.textContent=window.makeSpaceSquareVariation?"Change ticket":"Link ticket";
+    }
   });
   $("square-ticket").addEventListener("change",()=>{
-    const variationId=$("square-ticket").value;
-    window.makeSpaceSquareVariation=variationId;
-    $("verify-square").textContent=variationId?"Change ticket":"Link ticket";
-    $("square-verify-status").textContent=variationId?
-      "Ticket selected · click Save to finish":
-      "Select a ticket to track bookings.";
+    const value=$("square-ticket").value;
+    window.makeSpaceSquareVariation=value;
+    status.textContent=value?"Ticket selected · click Save to finish":"Select a ticket, or Cancel.";
+    button.textContent=value?"Change ticket":"Link ticket";
   });
 
   function downloadGuestCsv(e,d){
