@@ -81,6 +81,17 @@ export const inspectLink=action({
   }
 });
 
+export const describeTicket=action({
+  args:{variationId:v.string()},
+  handler:async(ctx,{variationId})=>{
+    const identity=await ctx.runQuery(api.session.whoAmI,{});
+    if(!identity?.authorized)throw Error("Not authorized");
+    if(!variationId||variationId.length>256)return null;
+    const tickets=await catalogTickets();
+    return tickets.find(t=>t.variationId===variationId)||null;
+  }
+});
+
 export const listAttendees=query({
   args:{eventId:v.id("events")},
   handler:async(ctx,{eventId})=>{
