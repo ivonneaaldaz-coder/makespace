@@ -137,8 +137,10 @@ async function removeEvent(sourceId = editing) {
   if (!ready || !sourceId) return;
   const e = events.find(x => x.id === sourceId);
   if (!e) return;
-  const warning="Delete \""+e.title+"\"?\n\nThis will permanently remove the experience from Studio Manager and the public calendar. This cannot be undone.\n\nEvents with recorded bookings cannot be deleted.";
-  if (!confirm(warning)) return;
+  const approved = await (window.makeSpaceConfirmDelete
+    ? window.makeSpaceConfirmDelete(e.title)
+    : Promise.resolve(confirm('Delete "'+e.title+'"? This cannot be undone.')));
+  if (!approved) return;
   try {
     await call("mutation", "events:remove", { id: sourceId });
     await loadEvents();
