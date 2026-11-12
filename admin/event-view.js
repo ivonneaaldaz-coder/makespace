@@ -51,12 +51,13 @@ function showReadOnly(){
  $("ms-overview-attendees").addEventListener("click",()=>{openEditor(e.id);$("ms-tab-attendees")?.click()});
 }
 window.makeSpaceShowReadOnly=showReadOnly;
-const originalOpen=document.querySelectorAll("[data-edit]");
+
 window.makeSpaceHideReadOnly=()=>{
   card.hidden=true;
   tabs&&(tabs.hidden=false);
   form.hidden=false;
 };
+editor.querySelectorAll(".ms-workspace-tab").forEach(tab=>tab.addEventListener("click",()=>window.makeSpaceHideReadOnly()));
 const originalReset=window.makeSpaceResetWorkspace;
 window.makeSpaceResetWorkspace=()=>{
  window.makeSpaceHideReadOnly();
