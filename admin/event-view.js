@@ -13,7 +13,7 @@ form.insertAdjacentElement("afterend",card);
 const style=document.createElement("style");
 style.textContent=`
 #editor-view .editorbody[hidden],#editor-view .ms-workspace-tabs[hidden],#editor-view #attendees-panel[hidden]{display:none!important}
-#editor-view.ms-view-only .editorbody,#editor-view.ms-view-only .ms-workspace-tabs,#editor-view.ms-view-only #attendees-panel{display:none!important}
+#editor-view.ms-view-only .editorbody,#editor-view.ms-view-only #attendees-panel{display:none!important}
 #editor-view:not(.ms-view-only) #ms-readonly-view{display:none!important}
 #ms-readonly-view[hidden]{display:none!important}
 #ms-readonly-view .ms-overview-kicker{font:700 10px "DM Sans",sans-serif;letter-spacing:.14em;color:#795b63;text-transform:uppercase}
@@ -35,7 +35,10 @@ function showReadOnly(){
  window.makeSpaceResetWorkspace?.();
  editor.classList.remove("ms-attendees-active");
  editor.classList.add("ms-view-only");
- tabs&&(tabs.hidden=true);
+ tabs&&(tabs.hidden=false);
+ const detailsTab=$("ms-tab-details"),attendeesTab=$("ms-tab-attendees");
+ detailsTab?.setAttribute("aria-selected","true");
+ attendeesTab?.setAttribute("aria-selected","false");
  form.hidden=true;
  guestPanel&&(guestPanel.hidden=true);
  card.hidden=false;
@@ -45,8 +48,7 @@ function showReadOnly(){
  const fields=field("Date",typeof displayDate==="function"?displayDate(e.date):e.date)+field("Time",e.time||"TBD")+
    field("Venue",e.venue)+field("Experience type",e.category)+field("Ticket price","$"+price.toFixed(2))+
    field("Capacity",e.capacity+" guests")+field("Duration",e.duration+" minutes")+field("Status",e.status);
- card.innerHTML='<div class="ms-overview-kicker">EVENT OVERVIEW</div><h3>'+esc(e.title)+'</h3>'+
-   '<div class="ms-overview-grid">'+fields+'</div>'+
+ card.innerHTML='<div class="ms-overview-grid">'+fields+'</div>'+
    (e.description?'<div class="ms-overview-item"><span>Description</span><p class="ms-overview-notes">'+esc(e.description)+'</p></div>':"")+
    (e.notes?'<div class="ms-overview-item"><span>Internal notes · admins only</span><p class="ms-overview-notes">'+esc(e.notes)+'</p></div>':"")+
    '<div class="ms-overview-actions"><button type="button" class="btn" id="ms-overview-edit">Edit experience</button>'+
@@ -55,6 +57,15 @@ function showReadOnly(){
  $("ms-overview-attendees").addEventListener("click",()=>{openEditor(e.id);$("ms-tab-attendees")?.click()});
 }
 window.makeSpaceShowReadOnly=showReadOnly;
+window.makeSpaceEnterEditMode=()=>{
+ editor.classList.remove("ms-view-only","ms-attendees-active");
+ card.hidden=true;
+ tabs&&(tabs.hidden=!!editing);
+ form.hidden=false;
+ guestPanel&&(guestPanel.hidden=true);
+ $("editor-title").textContent=editing?"Edit experience":"New experience";
+ editor.querySelector(".editorhead .subtitle").textContent="Edit the details and save securely to your Studio Manager.";
+};
 
 window.makeSpaceHideReadOnly=()=>{
   editor.classList.remove("ms-view-only");
@@ -62,7 +73,7 @@ window.makeSpaceHideReadOnly=()=>{
   tabs&&(tabs.hidden=false);
   form.hidden=editor.classList.contains("ms-attendees-active");
 };
-editor.querySelectorAll(".ms-workspace-tab").forEach(tab=>tab.addEventListener("click",()=>window.makeSpaceHideReadOnly()));
+
 const originalReset=window.makeSpaceResetWorkspace;
 window.makeSpaceResetWorkspace=()=>{
  window.makeSpaceHideReadOnly();
