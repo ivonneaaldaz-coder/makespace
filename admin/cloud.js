@@ -133,13 +133,18 @@ async function saveEvent(e) {
   } catch (err) { toast("Not saved: " + errorMessage(err)); }
   finally { submitButton.disabled = false; submitButton.textContent = "Save"; }
 }
-async function removeEvent() {
-  if (!ready || !editing) return;
-  if (!confirm("Permanently delete this event from Convex?")) return;
+async function removeEvent(sourceId = editing) {
+  if (!ready || !sourceId) return;
+  const e = events.find(x => x.id === sourceId);
+  if (!e) return;
+  const warning="Delete \""+e.title+"\"?\n\nThis will permanently remove the experience from Studio Manager and the public calendar. This cannot be undone.\n\nEvents with recorded bookings cannot be deleted.";
+  if (!confirm(warning)) return;
   try {
-    await call("mutation", "events:remove", { id: editing });
-    await loadEvents(); toast("Event deleted");
-  } catch (err) { toast(errorMessage(err)); }
+    await call("mutation", "events:remove", { id: sourceId });
+    await loadEvents();
+    if(editing===sourceId)go("events");
+    toast("Event deleted");
+  } catch (err) { window.alert("Could not delete event: "+errorMessage(err)); }
 }
 async function duplicateEvent(sourceId = editing) {
   if (!ready || !sourceId) return;
