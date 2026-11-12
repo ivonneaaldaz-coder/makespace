@@ -52,6 +52,18 @@ input[type="submit"],a[role="button"],a.square-checkout,.booking,.submit,
   border-radius:0;
 }
 /* Some components have previous per-section rounded styles. */
+</style><style id="admin-calendar-controls-fix">
+#calendar-view{min-width:0;max-width:100%;overflow:visible}
+#calendar-view .sectiontop{flex-wrap:wrap;min-width:0}
+#calendar-view #cal-heading{font-size:clamp(29px,4vw,43px);overflow-wrap:normal;min-width:0}
+#calendar-view .ms-calendar-tools{display:flex;align-items:center;justify-content:flex-start;flex-wrap:wrap;gap:10px;min-width:0;width:100%;max-width:100%;margin:14px 0 22px}
+#calendar-view .ms-calendar-tools select{flex:0 1 auto;max-width:100%;box-sizing:border-box;min-width:0;appearance:auto;text-overflow:ellipsis;font:500 13px "DM Sans",sans-serif}
+#calendar-view #cal-month-select{width:147px}
+#calendar-view #cal-year-select{width:95px}
+#calendar-view .ms-calendar-tools button{flex:0 0 40px;width:40px;height:40px}
+#calendar-view .month-buttons{max-width:100%;min-width:0}
+#calendar-view .cal-grid{grid-template-columns:repeat(7,minmax(0,1fr));max-width:100%;min-width:0}
+@media(max-width:540px){#calendar-view .ms-calendar-tools{gap:7px}#calendar-view #cal-month-select{width:130px}#calendar-view #cal-year-select{width:88px}#calendar-view .ms-calendar-tools button{width:36px;height:36px;flex-basis:36px}}
 </style></head><body>
 
 <section id="access-gate" aria-label="Sign in to MAKE SPACE Studio Manager"><div class="access-card">
