@@ -150,6 +150,7 @@
         '<p><b>WHERE</b><br>'+escape(e.venue||"Venue to be announced")+'</p>'+
         '<p><b>DURATION</b><br>'+escape(e.duration)+' minutes</p>'+
         '<p><b>PRICE</b><br>'+ (e.priceCents===0?"Free":"$"+(e.priceCents/100).toFixed(2))+' per person</p>'+
+        '<div id="availability-info" class="availability-info" role="status" aria-live="polite">Checking available spots…</div>'+
         (e.status === "sold_out" ?
           '<p class="booking">Sold out</p><small>This experience is currently full.</small>' :
           allowedCheckout(e.checkoutUrl) ?
@@ -159,6 +160,32 @@
           '<p class="booking">Registration opening soon</p>'+
           '<small>Check back for the ticket link.</small>')+
         '</aside></div>';
+      let checking=false;
+      const updateAvailability=async()=>{
+        if(checking||document.hidden)return;
+        const info=$("availability-info");
+        if(!info)return;
+        checking=true;
+        try{
+          const a=await query("events:availability",{slug});
+          if(!a)return;
+          if(e.status==="sold_out"||a.status==="sold_out"||a.remaining===0){
+            info.textContent="Sold out · "+a.sold+" of "+a.capacity+" booked";
+            const action=document.querySelector("#experience-detail .square-checkout");
+            if(action)action.replaceWith(Object.assign(document.createElement("p"),{
+              className:"booking",textContent:"Sold out"
+            }));
+          }else{
+            info.textContent=a.remaining+" of "+a.capacity+" spots left";
+          }
+        }catch{
+          info.textContent="Availability confirmed at checkout";
+        }finally{checking=false}
+      };
+      await updateAvailability();
+      const refresh=window.setInterval(updateAvailability,20000);
+      window.addEventListener("pagehide",()=>window.clearInterval(refresh),{once:true});
+      document.addEventListener("visibilitychange",()=>{if(!document.hidden)void updateAvailability()});
     } catch {
       $("experience-detail").innerHTML='<p role="alert">Could not load this event. Please try again.</p><a href="/calendar/">Back to calendar</a>';
     }
