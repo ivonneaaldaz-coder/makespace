@@ -41,7 +41,7 @@ const eventRow=v.object({
  category:v.string(),capacity:v.number(),ticketsSold:v.number(),attendeesActual:v.number(),
  priceCents:v.number(),revenueCents:v.number(),expensesCents:v.number()
 });
-const expenseRow=v.object({sourceId:v.string(),title:v.string(),month:v.string(),amountCents:v.number()});
+const expenseRow=v.object({sourceId:v.string(),title:v.string(),month:v.string(),amountCents:v.number(),alreadyIncludedInEventProfit:v.boolean()});
 
 export const authorized=internalQuery({
  args:{tokenIdentifier:v.string()},
@@ -56,7 +56,7 @@ async function fetchAndApply(ctx:any){
  if(!token)throw Error("Airtable sync is not configured: set AIRTABLE_SYNC_TOKEN in Convex environment.");
  const [events,expenses]=await Promise.all([
   loadTable(token,EVENTS,["Event","Date","Type","Status","Capacity","Attendees","Ticket Price","Gross Revenue","Venue Fee","Total Expenses"]),
-  loadTable(token,EXPENSES,["Expense","Type","Cost","Transaction Date","Event","Net Cost After Expected Refund"])
+  loadTable(token,EXPENSES,["Expense","Type","Cost","Transaction Date","Event","Net Cost After Expected Refund","Notes"])
  ]);
  const completed=events.filter(r=>asText(r.fields["Status"])==="Completed"&&/^\d{4}-\d{2}-\d{2}$/.test(asText(r.fields["Date"])));
  const mapped=completed.map(r=>{
@@ -69,12 +69,18 @@ async function fetchAndApply(ctx:any){
     expensesCents:cents(asNum(f["Venue Fee"])+asNum(f["Total Expenses"]))};
  });
  const overhead=expenses.filter(r=>{
-  const f=r.fields;
+  const f=r.fields,links=Array.isArray(f["Event"])?f["Event"] as string[]:[];
+  // Include shared overhead with no linked event or the general MAKE SPACE record.
+  // Never copy costs linked directly to an individual workshop here.
   return asText(f["Type"])==="Overhead" &&
-   (!Array.isArray(f["Event"])||(f["Event"] as unknown[]).length===0)&&
+   (links.length===0||links.every(id=>id==="rec7mwMlhO18Vqnfs")) &&
    monthOf(f).length===7;
  }).map(r=>({sourceId:r.id,title:asText(r.fields["Expense"]),month:monthOf(r.fields),
-  amountCents:cents(typeof r.fields["Net Cost After Expected Refund"]==="number"?asNum(r.fields["Net Cost After Expected Refund"]):asNum(r.fields["Cost"]))}));
+  amountCents:cents(typeof r.fields["Net Cost After Expected Refund"]==="number"?asNum(r.fields["Net Cost After Expected Refund"]):asNum(r.fields["Cost"])),
+  // Existing Casa Dōson 01 P&L includes this membership allocation already.
+  // It remains visible in the expense ledger but must not reduce company profit twice.
+  alreadyIncludedInEventProfit:r.id==="recvlFOzMT3ZZ461M"
+ }));
  await ctx.runMutation(internal.airtableSync.apply,{events:mapped,expenses:overhead});
  return {events:mapped.length,overheadExpenses:overhead.length};
 }
@@ -117,7 +123,7 @@ export const apply=internalMutation({
   // Airtable has authority over existing linked overhead; no unlinked expenses are imported.
   for(const o of expenses){
    const old=await ctx.db.query("operatingExpenses").withIndex("by_airtable_record",q=>q.eq("airtableRecordId",o.sourceId)).unique();
-   const data={airtableRecordId:o.sourceId,title:o.title,month:o.month,amountCents:o.amountCents,updatedAt:Date.now()};
+   const data={airtableRecordId:o.sourceId,title:o.title,month:o.month,amountCents:o.amountCents,alreadyIncludedInEventProfit:o.alreadyIncludedInEventProfit,updatedAt:Date.now()};
    if(old)await ctx.db.patch(old._id,data);
    else await ctx.db.insert("operatingExpenses",data);
   }
