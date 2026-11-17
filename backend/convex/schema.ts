@@ -53,6 +53,7 @@ export default defineSchema({
     title: v.string(),
     month: v.string(), // YYYY-MM, supports expenses with no exact transaction day
     amountCents: v.number(),
+    alreadyIncludedInEventProfit: v.optional(v.boolean()),
     updatedAt: v.number(),
   }).index("by_airtable_record",["airtableRecordId"]),
   registrations: defineTable({
