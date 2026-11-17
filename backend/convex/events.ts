@@ -26,6 +26,7 @@ const eventFields = {
   squareVariationId: v.optional(v.string()),
   featured: v.boolean(),
   historical: v.optional(v.boolean()),
+  airtableRecordId: v.optional(v.string()),
   ticketsSold: v.optional(v.number()),
   attendeesActual: v.optional(v.number()),
   actualRevenueCents: v.optional(v.number()),
@@ -50,7 +51,7 @@ function validateEvent(e: {
   if (e.timezone !== "America/Chicago") throw new ConvexError("Unsupported timezone");
   if (!Number.isInteger(e.capacity) || e.capacity < 1 || e.capacity > 10000) throw new ConvexError("Invalid capacity");
   if (!Number.isInteger(e.priceCents) || e.priceCents < 0) throw new ConvexError("Invalid ticket price");
-  if (!Number.isInteger(e.duration) || e.duration < 15 || e.duration > 1440) throw new ConvexError("Invalid duration");
+  if (!Number.isInteger(e.duration) || e.duration < (e.historical ? 0 : 15) || e.duration > 1440) throw new ConvexError("Invalid duration");
   for(const n of [e.ticketsSold,e.attendeesActual,e.actualRevenueCents,e.expensesCents]){
     if(n !== undefined && (!Number.isSafeInteger(n) || n < 0))throw new ConvexError("Event financial values must be nonnegative whole numbers");
   }
