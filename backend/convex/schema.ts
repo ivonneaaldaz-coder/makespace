@@ -35,6 +35,7 @@ export default defineSchema({
     squareVariationId: v.optional(v.string()),
     featured: v.boolean(),
     historical: v.optional(v.boolean()), // admin-only historical event; never shown publicly
+    archived: v.optional(v.boolean()), // retained payment history, hidden from active views and reports
     airtableRecordId: v.optional(v.string()),
     ticketsSold: v.optional(v.number()),
     attendeesActual: v.optional(v.number()),
