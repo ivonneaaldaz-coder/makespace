@@ -144,20 +144,39 @@ async function saveEvent(e) {
   } catch (err) { toast("Not saved: " + errorMessage(err)); }
   finally { submitButton.disabled = false; submitButton.textContent = "Save"; }
 }
-async function removeEvent(sourceId = editing) {
-  if (!ready || !sourceId) return;
-  const e = events.find(x => x.id === sourceId);
-  if (!e) return;
-  const approved = await (window.makeSpaceConfirmDelete
-    ? window.makeSpaceConfirmDelete(e.title)
-    : Promise.resolve(confirm('Delete "'+e.title+'"? This cannot be undone.')));
-  if (!approved) return;
-  try {
-    await call("mutation", "events:remove", { id: sourceId });
-    await loadEvents();
-    if(editing===sourceId)go("events");
-    toast("Event deleted");
-  } catch (err) { window.alert("Could not delete event: "+errorMessage(err)); }
+async function archiveEvent(sourceId=editing){
+ if(!ready||!sourceId)return;
+ const e=events.find(x=>x.id===sourceId);
+ if(!e)return;
+ const approved=confirm('Archive "'+e.title+'"?\\n\\nThis hides it from Studio Manager, the public calendar, and performance totals. Square booking and payment records are kept. This does not refund a payment or disable its Square payment link.');
+ if(!approved)return;
+ try{
+  await call("mutation","events:archive",{id:sourceId});
+  await loadEvents();
+  if(editing===sourceId)go("events");
+  toast("Event archived · payment history retained");
+ }catch(err){toast("Could not archive event: "+errorMessage(err))}
+}
+async function removeEvent(sourceId=editing){
+ if(!ready||!sourceId)return;
+ const e=events.find(x=>x.id===sourceId);
+ if(!e)return;
+ const approved=await(window.makeSpaceConfirmDelete
+   ?window.makeSpaceConfirmDelete(e.title)
+   :Promise.resolve(confirm('Delete "'+e.title+'"? This cannot be undone.')));
+ if(!approved)return;
+ try{
+  await call("mutation","events:remove",{id:sourceId});
+  await loadEvents();
+  if(editing===sourceId)go("events");
+  toast("Event deleted");
+ }catch(err){
+  const message=errorMessage(err);
+  if(/payment records and cannot be deleted/i.test(message)){
+   toast("This event has a payment. Archive it instead to preserve its payment history.");
+   await archiveEvent(sourceId);
+  }else toast("Could not delete event: "+message);
+ }
 }
 async function duplicateEvent(sourceId = editing) {
   if (!ready || !sourceId) return;
@@ -230,7 +249,7 @@ async function init() {
 }
 $("access-signout").onclick = () => clerk?.signOut().then(() => location.reload());
 $("studio-signout").onclick = () => clerk?.signOut().then(() => location.reload());
-window.makeSpaceCloud = { save: saveEvent, remove: removeEvent, duplicate: duplicateEvent,
+window.makeSpaceCloud = { save: saveEvent, remove: removeEvent, archive: archiveEvent, duplicate: duplicateEvent,
   request: call,
   get connected() {return ready;}, reload: loadEvents };
 init();
