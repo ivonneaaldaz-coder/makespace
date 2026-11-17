@@ -35,6 +35,7 @@ export default defineSchema({
     squareVariationId: v.optional(v.string()),
     featured: v.boolean(),
     historical: v.optional(v.boolean()), // admin-only historical event; never shown publicly
+    airtableRecordId: v.optional(v.string()),
     ticketsSold: v.optional(v.number()),
     attendeesActual: v.optional(v.number()),
     actualRevenueCents: v.optional(v.number()), // overrides ticketsSold * price
@@ -45,7 +46,15 @@ export default defineSchema({
     .index("by_status_date", ["status", "date"])
     .index("by_slug", ["slug"])
     .index("by_date", ["date"])
-    .index("by_square_variation", ["squareVariationId"]),
+    .index("by_square_variation", ["squareVariationId"])
+    .index("by_airtable_record", ["airtableRecordId"]),
+  operatingExpenses: defineTable({
+    airtableRecordId: v.string(),
+    title: v.string(),
+    month: v.string(), // YYYY-MM, supports expenses with no exact transaction day
+    amountCents: v.number(),
+    updatedAt: v.number(),
+  }).index("by_airtable_record",["airtableRecordId"]),
   registrations: defineTable({
     eventId: v.id("events"),
     squarePaymentId: v.string(),
