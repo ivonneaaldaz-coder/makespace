@@ -74,11 +74,14 @@ async function fetchAndApply(ctx:any){
    (!Array.isArray(f["Event"])||(f["Event"] as unknown[]).length===0)&&
    monthOf(f).length===7;
  }).map(r=>({sourceId:r.id,title:asText(r.fields["Expense"]),month:monthOf(r.fields),
-  amountCents:cents(asNum(r.fields["Net Cost After Expected Refund"])||asNum(r.fields["Cost"]))}));
+  amountCents:cents(typeof r.fields["Net Cost After Expected Refund"]==="number"?asNum(r.fields["Net Cost After Expected Refund"]):asNum(r.fields["Cost"]))}));
  await ctx.runMutation(internal.airtableSync.apply,{events:mapped,expenses:overhead});
  return {events:mapped.length,overheadExpenses:overhead.length};
 }
-export const refresh=internalAction({args:{},handler:async(ctx)=>fetchAndApply(ctx)});
+export const refresh=internalAction({args:{},handler:async(ctx)=>{
+ if(!process.env.AIRTABLE_SYNC_TOKEN)return {events:0,overheadExpenses:0};
+ return await fetchAndApply(ctx);
+}});
 export const syncNow=action({
  args:{},
  handler:async(ctx)=>{
