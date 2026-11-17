@@ -21,10 +21,12 @@ function render(){
  $("ms-perf-profit").textContent=money(sum("profitCents"));
  const costs=operating.filter(o=>year==="all"||o.month.slice(0,4)===year);
  const overhead=costs.reduce((n,o)=>n+o.amountCents,0);
+ const allocated=costs.reduce((n,o)=>n+(o.alreadyIncludedInEventProfit?o.amountCents:0),0);
+ const unapplied=overhead-allocated;
  $("ms-perf-overhead").textContent=money(overhead);
- $("ms-perf-company").textContent=money(sum("profitCents")-overhead);
+ $("ms-perf-company").textContent=money(sum("profitCents")-unapplied);
  $("ms-overhead-rows").innerHTML=costs.length?costs.sort((a,b)=>b.month.localeCompare(a.month)).map(o=>
-   "<tr><td>"+safe(o.title)+"</td><td>"+safe(o.month)+"</td><td>"+money(o.amountCents)+"</td></tr>"
+   "<tr><td>"+safe(o.title)+(o.alreadyIncludedInEventProfit?'<small style="display:block;color:#8c7379">Already included in event profit · not deducted twice</small>':'')+"</td><td>"+safe(o.month)+"</td><td>"+money(o.amountCents)+"</td></tr>"
  ).join(""):'<tr><td colspan="3">No overhead expenses recorded for this period.</td></tr>';
  $("ms-performance-rows").innerHTML=shown.length?
   [...shown].sort((a,b)=>b.date.localeCompare(a.date)).map(r=>
