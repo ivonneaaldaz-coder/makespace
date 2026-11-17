@@ -119,6 +119,15 @@ input[type="submit"],a[role="button"],a.square-checkout,.booking,.submit,
 .ms-studio-tech-note{margin-top:clamp(45px,7vw,90px);padding-top:16px;border-top:1px solid #daccb7;color:#a88b58;font:500 11px/1.6 "DM Sans",sans-serif;letter-spacing:.03em;text-align:center}
 .ms-studio-tech-note span{margin:0 7px}
 @media(max-width:600px){.ms-studio-tech-note{margin-top:45px;font-size:10px}}
+</style><style id="ms-overhead-polish">
+#performance-view .ms-finance-stats{grid-template-columns:repeat(4,minmax(0,1fr))}
+.ms-overhead-section{margin-top:30px;padding-top:24px;border-top:1px solid #e5d8d0}
+.ms-overhead-heading{display:flex;justify-content:space-between;flex-wrap:wrap;align-items:baseline;gap:12px;margin-bottom:15px}
+.ms-overhead-heading h3{font:400 30px "Italiana",serif;color:#501923;margin:0}
+.ms-overhead-heading span{color:#80646d;font-size:12px}
+#ms-airtable-status{margin:18px 0 10px}
+#ms-airtable-sync{font-size:11px}
+@media(max-width:900px){#performance-view .ms-finance-stats{grid-template-columns:repeat(2,minmax(0,1fr))}}
 </style></head><body>
 
 <section id="access-gate" aria-label="Sign in to MAKE SPACE Studio Manager"><div class="access-card">
@@ -148,10 +157,17 @@ input[type="submit"],a[role="button"],a.square-checkout,.booking,.submit,
   <div><span>Events with records</span><strong id="ms-perf-events">—</strong></div>
   <div><span>Tickets sold</span><strong id="ms-perf-tickets">—</strong></div>
   <div><span>Gross revenue</span><strong id="ms-perf-revenue">—</strong></div>
-  <div><span>Expenses</span><strong id="ms-perf-expenses">—</strong></div>
-  <div><span>Profit</span><strong id="ms-perf-profit">—</strong></div>
+  <div><span>Event expenses</span><strong id="ms-perf-expenses">—</strong></div>
+  <div><span>Event profit</span><strong id="ms-perf-profit">—</strong></div>
+  <div><span>Operating overhead</span><strong id="ms-perf-overhead">—</strong></div>
+  <div><span>Company profit</span><strong id="ms-perf-company">—</strong></div>
 </div>
 <div class="ms-finance-scroll"><table class="ms-finance-table"><thead><tr><th>Experience</th><th>Date</th><th>Guests / tickets</th><th>Revenue</th><th>Expenses</th><th>Profit</th></tr></thead><tbody id="ms-performance-rows"><tr><td colspan="6">Loading performance…</td></tr></tbody></table></div>
+<div class="ms-overhead-section"><div class="ms-overhead-heading"><h3>Operating expenses</h3><span>Company costs not assigned to individual events</span></div>
+<div class="ms-finance-scroll"><table class="ms-finance-table"><thead><tr><th>Expense</th><th>Month</th><th>Amount</th></tr></thead><tbody id="ms-overhead-rows"><tr><td colspan="3">Loading…</td></tr></tbody></table></div>
+</div>
+<p id="ms-airtable-status" class="hint" role="status">Airtable history sync not yet configured.</p>
+<button type="button" class="btn secondary" id="ms-airtable-sync">Sync Airtable now</button>
 </div>
 </section>
 <section class="calendarpanel surface" id="calendar-view"><div class="sectiontop"><h2 id="cal-heading">January 2027</h2><button class="btn" id="cal-add">+ New event</button></div><div class="ms-calendar-tools"><button type="button" id="cal-prev" aria-label="Previous month">←</button><select id="cal-month-select" aria-label="Calendar month"></select><select id="cal-year-select" aria-label="Calendar year"></select><button type="button" id="cal-next" aria-label="Next month">→</button></div><div class="month-buttons" id="monthbuttons"></div><div class="cal-grid" id="calgrid"></div><p class="footnote">Select an event to view its details.</p></section>
