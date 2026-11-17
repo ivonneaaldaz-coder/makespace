@@ -121,7 +121,7 @@ async function saveEvent(e) {
       category: data.category === "Ceramics" || data.category === "Social" ||
         data.category === "Collaboration" || data.category === "Private event" ? data.category : "Social",
       status: data.status === "sold-out" ? "sold_out" : data.status,
-      date: data.date, time: data.time || "11:00", timezone: "America/Chicago",
+      date: data.date, time: data.historical ? (data.time || "") : (data.time || "11:00"), timezone: "America/Chicago",
       duration: data.duration, venue: data.venue,
       priceCents: Math.round(data.price * 100), capacity: data.capacity,
       description: data.description, featured: data.featured, notes: data.notes,
