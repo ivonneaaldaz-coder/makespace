@@ -47,7 +47,7 @@ function validateEvent(e: {
   if (Number.isNaN(date.valueOf()) || date.toISOString().slice(0, 10) !== e.date) {
     throw new ConvexError("Invalid calendar date");
   }
-  if (!/^([01]\d|2[0-3]):[0-5]\d$/.test(e.time)) throw new ConvexError("Invalid time");
+  if (!e.historical && !/^([01]\d|2[0-3]):[0-5]\d$/.test(e.time)) throw new ConvexError("Invalid time");
   if (e.timezone !== "America/Chicago") throw new ConvexError("Unsupported timezone");
   if (!Number.isInteger(e.capacity) || e.capacity < 1 || e.capacity > 10000) throw new ConvexError("Invalid capacity");
   if (!Number.isInteger(e.priceCents) || e.priceCents < 0) throw new ConvexError("Invalid ticket price");
