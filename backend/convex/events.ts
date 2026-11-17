@@ -110,7 +110,7 @@ export const listPublic = query({
       .withIndex("by_status_date", q => q.eq("status", "published")).collect();
     const soldOut = await ctx.db.query("events")
       .withIndex("by_status_date", q => q.eq("status", "sold_out")).collect();
-    const all = [...published, ...soldOut].filter(e=>!e.historical).sort((a,b) => a.date.localeCompare(b.date));
+    const all = [...published, ...soldOut].filter(e=>!e.historical&&!e.archived).sort((a,b) => a.date.localeCompare(b.date));
     return await Promise.all(all.map(e => publicEvent(ctx, e)));
   },
 });
@@ -120,7 +120,7 @@ export const getPublicBySlug = query({
   handler: async (ctx, args) => {
     const event = await ctx.db.query("events")
       .withIndex("by_slug", q => q.eq("slug", args.slug)).unique();
-    return event && event.status !== "draft" && !event.historical ? publicEvent(ctx, event) : null;
+    return event && event.status !== "draft" && !event.historical && !event.archived ? publicEvent(ctx, event) : null;
   },
 });
 
@@ -131,7 +131,7 @@ export const availability = query({
   args: { slug: v.string() },
   handler: async (ctx,{slug}) => {
     const event=await ctx.db.query("events").withIndex("by_slug",q=>q.eq("slug",slug)).unique();
-    if(!event||event.status==="draft"||event.historical)return null;
+    if(!event||event.status==="draft"||event.historical||event.archived)return null;
     const paid=await ctx.db.query("registrations").withIndex("by_event",q=>q.eq("eventId",event._id)).collect();
     const sold=paid.filter(r=>r.status==="paid").reduce((n,r)=>n+r.quantity,0);
     return {capacity:event.capacity,sold,remaining:Math.max(0,event.capacity-sold),status:event.status};
@@ -142,7 +142,7 @@ export const listAdmin = query({
   args: {},
   handler: async (ctx) => {
     await requireAdmin(ctx);
-    return await ctx.db.query("events").withIndex("by_date").collect();
+    return (await ctx.db.query("events").withIndex("by_date").collect()).filter(e=>!e.archived);
   },
 });
 
@@ -153,7 +153,7 @@ export const performance = query({
   args:{},
   handler:async(ctx)=>{
     await requireAdmin(ctx);
-    const entries=await ctx.db.query("events").collect();
+    const entries=(await ctx.db.query("events").collect()).filter(e=>!e.archived);
     const rows=await Promise.all(entries.map(async(e)=>{
       const transactions=e.historical?[]:await ctx.db.query("registrations")
         .withIndex("by_event",q=>q.eq("eventId",e._id)).collect();
@@ -209,6 +209,20 @@ export const upsert = mutation({
     }
     return await ctx.db.insert("events", { ...event, updatedAt: Date.now() });
   },
+});
+
+/** Soft archive keeps Square orders and booking guest references intact. */
+export const archive = mutation({
+ args:{id:v.id("events")},
+ handler:async(ctx,{id})=>{
+   const admin=await requireAdmin(ctx);
+   if(admin.role!=="owner")throw new ConvexError("Owner permission required");
+   const event=await ctx.db.get(id);
+   if(!event)throw new ConvexError("Event not found");
+   if(event.airtableRecordId)throw new ConvexError("Airtable-linked records should be managed in Airtable");
+   await ctx.db.patch(id,{archived:true,featured:false,status:"draft",updatedAt:Date.now()});
+   return id;
+ }
 });
 
 export const remove = mutation({
